@@ -31,7 +31,7 @@ function LessonList({ unitSlug, current, onPick }: { unitSlug: string; current: 
                   {l.written ? (
                     <Link href={lessonHref(unit, l)} onClick={onPick} aria-current={on ? 'page' : undefined} className={`flex min-h-[44px] items-start gap-2 rounded-xl px-2 py-2.5 ${on ? 'bg-[var(--accent-tint)] font-semibold' : 'hover:bg-[var(--accent-tint)]'}`}>{inner}</Link>
                   ) : (
-                    <div className="flex min-h-[44px] items-start gap-2 px-2 py-2.5 opacity-50" aria-disabled>{inner}<span className="mt-0.5 shrink-0 text-[10.5px] text-muted">Soon</span></div>
+                    <Link href={`/study/?id=${l.id}`} onClick={onPick} aria-current={on ? 'page' : undefined} className={`flex min-h-[44px] items-start gap-2 rounded-xl px-2 py-2.5 ${on ? 'bg-[var(--accent-tint)] font-semibold' : 'text-muted hover:bg-[var(--accent-tint)]'}`}>{inner}<span className="mt-0.5 shrink-0 text-[10.5px] text-muted">Generate</span></Link>
                   )}
                 </li>
               );
@@ -79,14 +79,14 @@ export function LessonBottomBar({ unitSlug, current }: { unitSlug: string; curre
       <div className="h-[72px] lg:hidden" aria-hidden />
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-[color-mix(in_oklab,var(--card)_92%,transparent)] backdrop-blur-md lg:hidden" style={{ paddingBottom: 'var(--safe-b)' }} aria-label="Lesson navigation">
         <div className="mx-auto flex h-[60px] max-w-[720px] items-center justify-between gap-1 px-2">
-          {prev?.written ? (
-            <Link href={lessonHref(unit, prev)} className={`${navBtn} text-muted`} aria-label={`Previous: ${prev.number} ${prev.title}`}><IconBack size={18} /> {prev.number}</Link>
+          {prev ? (
+            <Link href={prev.written ? lessonHref(unit, prev) : `/study/?id=${prev.id}`} className={`${navBtn} text-muted`} aria-label={`Previous: ${prev.number} ${prev.title}`}><IconBack size={18} /> {prev.number}</Link>
           ) : <span className="w-[72px]" />}
           <button onClick={() => setOpen(true)} className="flex h-11 items-center gap-2 rounded-xl border border-line bg-card px-4 text-[14px] font-semibold" aria-haspopup="dialog">
             <IconList size={18} /> Lesson {ls[i]?.number} <span className="font-normal text-muted">of {ls.length}</span>
           </button>
-          {next?.written ? (
-            <Link href={lessonHref(unit, next)} className={`${navBtn} text-ink`} aria-label={`Next: ${next.number} ${next.title}`}>{next.number} <IconArrow size={18} /></Link>
+          {next ? (
+            <Link href={next.written ? lessonHref(unit, next) : `/study/?id=${next.id}`} className={`${navBtn} text-ink`} aria-label={`Next: ${next.number} ${next.title}`}>{next.number} <IconArrow size={18} /></Link>
           ) : <Link href={`/practice/${unit.slug}/`} className={`${navBtn} text-ink`}>Practice <IconArrow size={18} /></Link>}
         </div>
       </nav>

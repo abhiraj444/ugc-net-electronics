@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "npx serve out"
+    "start": "npx serve out",
+    "prebuild": "node scripts/gen-published-index.mjs",
+    "predev": "node scripts/gen-published-index.mjs"
   },
   "dependencies": {
     "dexie": "^4.4.7",

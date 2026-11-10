@@ -13,7 +13,7 @@ const TABS = [
 /** Thumb-reachable navigation on phones. Lesson pages show their own lesson bar instead. */
 export default function MobileTabBar() {
   const path = usePathname();
-  const isLesson = /^\/course\/unit-\d+\/[^/]+\/?$/.test(path);
+  const isLesson = /^\/course\/unit-\d+\/[^/]+\/?$/.test(path) || path.startsWith('/study') || path.startsWith('/golden');
   if (isLesson) return null;
   return (
     <>

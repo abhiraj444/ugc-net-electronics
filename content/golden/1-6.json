@@ -1,0 +1,339 @@
+{
+ "id": "1-6",
+ "unit": "unit-1",
+ "number": "1.6",
+ "title": "PN junction: a border town where charges cross and then stop",
+ "dek": "Join p-type and n-type silicon and carriers rush across, leave charged ions behind, and build a wall that stops the rush. That wall is the reason a diode lets current through one way and not the other.",
+ "netWeight": "High",
+ "minutes": 18,
+ "buildsOn": [
+  "1-5"
+ ],
+ "blocks": [
+  {
+   "type": "hook",
+   "text": "Picture two villages next to each other. One is crowded with people who want more space. The other is full of empty houses. Open the border and people rush across to fill them.\n\nBut every person who leaves takes away something their own village needed to stay balanced, and soon the border is lined with angry, charged houses on both sides. They push back. The rush slows, then stops. That standoff, frozen in a sliver of silicon a micrometre wide, is a PN junction.",
+   "_id": "g00"
+  },
+  {
+   "type": "section",
+   "title": "What happens the moment you join them?",
+   "_id": "g01"
+  },
+  {
+   "type": "paragraph",
+   "text": "On the n side there are lots of free electrons. On the p side there are lots of holes. Put the two pieces in contact and each kind of carrier spreads into the side where it is rare, exactly like ink spreading in water. This spreading is called **diffusion**: motion from crowded to empty, driven only by the difference in crowding.",
+   "_id": "g02"
+  },
+  {
+   "type": "paragraph",
+   "text": "Electrons that cross into the p side meet holes and **recombine**: the electron drops into the empty bond and both carriers disappear. The same happens to holes that cross into the n side.",
+   "_id": "g03"
+  },
+  {
+   "type": "paragraph",
+   "text": "What stays behind is the important part. Each donor atom on the n side gave away its electron, so it is now a fixed **positive ion** locked in the crystal. Each acceptor on the p side is a fixed **negative ion**. Near the boundary, those ions are no longer covered by mobile carriers. This strip, emptied of free carriers, is the **depletion region**.",
+   "_id": "g04"
+  },
+  {
+   "type": "yourGuess",
+   "question": "As more carriers cross, does the electric field at the junction get stronger, weaker, or stay the same?",
+   "answer": "**Stronger.** Every carrier that crosses uncovers one more ion on each side. More positive charge on the right and more negative charge on the left means a stronger field pointing from n to p, and that field pushes back on the very carriers that are crossing.",
+   "_id": "g05"
+  },
+  {
+   "type": "section",
+   "title": "Try it: build a junction",
+   "_id": "g06"
+  },
+  {
+   "type": "paragraph",
+   "text": "The figure below starts with the two pieces apart. Press Join and watch carriers cross, ions appear and the depletion region open up. Under the lattice are four linked plots: the charge left behind, the electric field it makes, the potential, and the energy bands.",
+   "_id": "g07"
+  },
+  {
+   "type": "tryThis",
+   "text": "press **Join** with the textbook preset. Notice how thin the depletion region is on the p side. Then drag **$N_D$** up tenfold, from $10^{15}$ to $10^{16}$, and see which side the region shrinks on.",
+   "_id": "g08"
+  },
+  {
+   "type": "figure",
+   "figure": "pn-junction",
+   "title": "A border town where charges cross and then stop",
+   "label": "Figure 1.6",
+   "params": {
+    "NA": 1e+17,
+    "ND": 1000000000000000.0,
+    "T": 300
+   },
+   "_id": "g09"
+  },
+  {
+   "type": "describe",
+   "text": "**What it shows.** Top: a p-type block (open red circles are holes, small “−” marks are fixed acceptor ions) and an n-type block (blue dots are electrons, “+” marks are fixed donor ions). After Join, carriers near the boundary vanish and the uncovered ions are drawn bold. The shaded strip is the depletion region, drawn to the same horizontal scale as the plots below. Below: charge density $\\rho(x)$ (two rectangles), field $E(x)$ (a triangle, negative because it points from n to p), potential $V(x)$ (an S-curve rising by $V_{bi}$), and the band diagram, where $E_c$ and $E_v$ bend and the Fermi level $E_F$ becomes flat.\n\n**Controls.** $N_A$ and $N_D$ sliders from $10^{14}$ to $10^{18}$ cm⁻³, temperature from 250 to 400 K, Join and Reset, and three presets. With reduced motion turned on, Join jumps straight to equilibrium and a Step button walks through it in quarters.\n\n**Where the numbers come from.** The abrupt-junction depletion approximation: $V_{bi} = (kT/q)\\ln(N_A N_D/n_i^2)$, $W = \\sqrt{(2\\varepsilon_s/q)V_{bi}(1/N_A + 1/N_D)}$, $N_A x_p = N_D x_n$, $E_{max} = qN_D x_n/\\varepsilon_s$. It uses $\\varepsilon_s = 11.7\\,\\varepsilon_0$, $n_i = 1\\times10^{10}$ cm⁻³ at 300 K scaled with temperature as $T^{3/2}\\exp(-E_g/2kT)$, and complete ionisation of dopants.\n\n**Limits.** The number of dots is illustrative (it grows with the logarithm of doping, since $10^{17}$ real dots would not fit). The depletion edges are treated as sharp; real carrier densities fade out over a Debye length. During the Join animation the plots grow the depletion width linearly in time for clarity; only the final equilibrium values are physical.",
+   "_id": "g10"
+  },
+  {
+   "type": "section",
+   "title": "Why does the rush stop?",
+   "_id": "g11"
+  },
+  {
+   "type": "paragraph",
+   "text": "The uncovered ions create an electric field across the depletion region, pointing from the positive n side to the negative p side. That field pushes electrons back toward n and holes back toward p. Motion caused by a field is called **drift**.",
+   "_id": "g12"
+  },
+  {
+   "type": "paragraph",
+   "text": "So two currents now fight each other. Diffusion pushes carriers across; drift pushes them back. The field keeps growing until the two exactly cancel. At that point no net current flows, and the junction is in **equilibrium**. You can see the sign of equilibrium in the band diagram: the Fermi level is a single flat line through the whole device.",
+   "_id": "g13"
+  },
+  {
+   "type": "paragraph",
+   "text": "The potential step that builds up across the depletion region is the **built-in potential**, $V_{bi}$. For the textbook silicon junction it is a little over 0.7 V. It depends on doping only through a logarithm, which is why almost every silicon junction ends up between about 0.6 and 0.9 V.",
+   "_id": "g14"
+  },
+  {
+   "type": "equationCard",
+   "title": "Built-in potential",
+   "tex": "V_{bi} = \\frac{kT}{q}\\,\\ln\\!\\left(\\frac{N_A N_D}{n_i^{2}}\\right)",
+   "symbols": [
+    {
+     "s": "V_{bi}",
+     "name": "built-in potential across the junction",
+     "unit": "V"
+    },
+    {
+     "s": "kT/q",
+     "name": "thermal voltage",
+     "unit": "25.85 mV at 300 K"
+    },
+    {
+     "s": "N_A",
+     "name": "acceptor concentration, p side",
+     "unit": "cm⁻³"
+    },
+    {
+     "s": "N_D",
+     "name": "donor concentration, n side",
+     "unit": "cm⁻³"
+    },
+    {
+     "s": "n_i",
+     "name": "intrinsic carrier concentration",
+     "unit": "cm⁻³"
+    }
+   ],
+   "typical": "$N_A = 10^{17}$, $N_D = 10^{15}$ cm⁻³, $n_i = 10^{10}$ cm⁻³, 300 K: $\\ln(10^{12}) = 27.63$, so $V_{bi} = 0.02585 \\times 27.63 \\approx$ **0.714 V** (0.716 V if you round kT/q to 25.9 mV). W ≈ 0.97 µm, almost all of it on the lightly doped n side.",
+   "_id": "g15"
+  },
+  {
+   "type": "sideNote",
+   "text": "You cannot measure $V_{bi}$ by touching a voltmeter across a diode. The contact potentials where the metal leads meet the silicon cancel it exactly. If they did not, every diode sitting in a drawer would be a battery, and you could run a clock on it forever.",
+   "_id": "g16"
+  },
+  {
+   "type": "section",
+   "title": "Which side does the wall grow into?",
+   "_id": "g17"
+  },
+  {
+   "type": "paragraph",
+   "text": "Charge must balance: the negative charge uncovered on the p side equals the positive charge uncovered on the n side. In symbols, $N_A x_p = N_D x_n$. If the p side is doped 100 times more heavily, it only needs to give up a strip 100 times thinner to match the charge.",
+   "_id": "g18"
+  },
+  {
+   "type": "paragraph",
+   "text": "So the depletion region reaches mostly into the *lightly* doped side. A p⁺n junction is depleted almost entirely on its n side. That is the result the “Try this” asked you to find: raising $N_D$ shrinks the region on the n side, because the n side now needs less width to supply the same charge.",
+   "_id": "g19"
+  },
+  {
+   "type": "example",
+   "title": "your phone charger",
+   "text": "The charger on your desk turns 230 V, 50 Hz mains into DC with a bridge of four PN junctions. Each one blocks for half of every cycle, 100 times a second between them, because of exactly this depletion region.",
+   "_id": "g20"
+  },
+  {
+   "type": "section",
+   "title": "Forward and reverse bias, in one picture",
+   "_id": "g21"
+  },
+  {
+   "type": "paragraph",
+   "text": "Connect a battery with its positive end on the p side and you **forward bias** the junction. The applied voltage opposes the built-in one, so the wall drops to $V_{bi} - V$. The depletion region narrows and carriers flood over the lower wall. Current flows.",
+   "_id": "g22"
+  },
+  {
+   "type": "paragraph",
+   "text": "Flip the battery and you **reverse bias** it. Now the wall rises to $V_{bi} + V_R$, the depletion region widens as $\\sqrt{V_{bi}+V_R}$, and only a trickle of minority carriers, the few electrons that happen to be on the p side and holes on the n side, drift through. That trickle is the reverse saturation current, typically picoamps to nanoamps for a small silicon diode.",
+   "_id": "g23"
+  },
+  {
+   "type": "paragraph",
+   "text": "Lesson 1.7 turns this picture into one equation, and shows why the forward current multiplies tenfold for roughly every 60 mV.",
+   "_id": "g24"
+  },
+  {
+   "type": "remember",
+   "text": "At a PN junction, diffusion builds a field until drift cancels it, leaving a depletion region and a built-in potential of roughly 0.6 to 0.8 V in silicon.",
+   "_id": "g25"
+  },
+  {
+   "type": "quiz",
+   "questions": [
+    {
+     "stem": "In a p⁺n junction ($N_A \\gg N_D$), which side does the depletion region extend into more?",
+     "options": [
+      "The heavily doped p⁺ side",
+      "The lightly doped n side",
+      "Equally into both sides",
+      "Neither: it sits exactly at the boundary plane"
+     ],
+     "answer": 1,
+     "why": [
+      "Heavy doping packs a lot of ion charge into a thin strip, so the p⁺ side needs only a sliver.",
+      "Charge balance $N_A x_p = N_D x_n$ means the lighter side must give up a wider strip to match the charge.",
+      "Only true when $N_A = N_D$.",
+      "The region has finite width W, set by the doping and $V_{bi}$."
+     ]
+    },
+    {
+     "stem": "What happens to the depletion width W when the reverse bias $V_R$ is increased?",
+     "options": [
+      "It shrinks, as $1/V_R$",
+      "It stays fixed, because doping fixes W",
+      "It widens, roughly as $\\sqrt{V_{bi}+V_R}$",
+      "It widens linearly with $V_R$"
+     ],
+     "answer": 2,
+     "why": [
+      "Shrinking happens under forward bias, not reverse.",
+      "Doping sets W at zero bias only; bias changes the potential the region must hold.",
+      "$W = \\sqrt{(2\\varepsilon_s/q)(V_{bi}+V_R)(1/N_A+1/N_D)}$ for an abrupt junction.",
+      "Linear would need a constant field; in an abrupt junction the field is triangular and W goes as a square root."
+     ]
+    },
+    {
+     "stem": "Why does an unconnected silicon diode not light an LED, even though it has a built-in potential of about 0.7 V?",
+     "options": [
+      "$V_{bi}$ only exists while current flows",
+      "The contact potentials at the metal leads cancel $V_{bi}$ exactly",
+      "$V_{bi}$ is too small to light anything",
+      "The depletion region is an insulator, so it stores no energy"
+     ],
+     "answer": 1,
+     "why": [
+      "$V_{bi}$ exists at equilibrium with zero current; that is when it is defined.",
+      "In equilibrium the Fermi level is flat through the whole loop, so the net voltage around it is zero.",
+      "Even a big $V_{bi}$ would not help: no net EMF is available at the terminals.",
+      "The depletion region does store charge (that is junction capacitance), but this is not why no EMF appears."
+     ]
+    },
+    {
+     "stem": "For a one-sided junction with $N_A \\gg N_D$, $N_D$ is doubled. The depletion width becomes about:",
+     "options": [
+      "2W",
+      "W/2",
+      "W/√2",
+      "Unchanged"
+     ],
+     "answer": 2,
+     "why": [
+      "W rises with lighter doping, not heavier.",
+      "That would need $W \\propto 1/N_D$; the dependence is a square root.",
+      "$W \\approx \\sqrt{2\\varepsilon_s V_{bi}/qN_D}$ for a one-sided junction, so doubling $N_D$ gives $W/\\sqrt{2}$ ($V_{bi}$ changes only slightly, by $(kT/q)\\ln 2 \\approx 18$ mV).",
+      "$N_D$ is the lightly doped side, which controls W."
+     ]
+    }
+   ],
+   "_id": "g26"
+  },
+  {
+   "type": "netCorner",
+   "questions": [
+    {
+     "tag": "Numerical",
+     "stem": "An abrupt silicon junction has $N_A = 10^{17}$ cm⁻³ and $N_D = 10^{16}$ cm⁻³ at 300 K (take $n_i = 10^{10}$ cm⁻³). The built-in potential is closest to:",
+     "options": [
+      "0.25 V",
+      "0.53 V",
+      "0.77 V",
+      "1.12 V"
+     ],
+     "answer": 2,
+     "why": [
+      "This is roughly kT/q × 10; it forgets the logarithm of the doping product.",
+      "This would correspond to much lighter doping (around $10^{14}$ on each side).",
+      "$V_{bi} = 0.02585 \\times \\ln(10^{33}/10^{20}) = 0.02585 \\times 29.93 \\approx 0.774$ V.",
+      "That is the band gap in eV. $V_{bi}$ approaches $E_g/q$ only for degenerate doping."
+     ],
+     "numeric": {
+      "formula": "kT*log(NA*ND/ni^2)",
+      "inputs": {
+       "kT": 0.02585,
+       "NA": 1e+17,
+       "ND": 1e+16,
+       "ni": 10000000000.0
+      },
+      "answer": 0.774,
+      "unit": "V"
+     }
+    },
+    {
+     "stem": "The depletion (transition) capacitance of a reverse-biased abrupt junction varies with reverse voltage $V_R$ as:",
+     "options": [
+      "$C \\propto (V_{bi}+V_R)$",
+      "$C \\propto (V_{bi}+V_R)^{-1/2}$",
+      "$C \\propto (V_{bi}+V_R)^{-1/3}$",
+      "C is independent of $V_R$"
+     ],
+     "answer": 1,
+     "why": [
+      "Capacitance falls, not rises, as the plates (depletion edges) move apart.",
+      "$C = \\varepsilon_s A/W$ and $W \\propto (V_{bi}+V_R)^{1/2}$ for an abrupt junction. This is how a varactor tunes.",
+      "The −1/3 power is for a linearly graded junction.",
+      "Varactor diodes exist precisely because C changes with $V_R$."
+     ]
+    },
+    {
+     "stem": "In thermal equilibrium, which statement about a PN junction is true?",
+     "options": [
+      "Diffusion current is zero on both sides",
+      "The Fermi level is constant across the junction",
+      "The intrinsic level $E_i$ is flat across the junction",
+      "Electric field is zero everywhere"
+     ],
+     "answer": 1,
+     "why": [
+      "Diffusion current is not zero; it is cancelled by an equal and opposite drift current.",
+      "Zero net current means a flat Fermi level. This is the defining feature of equilibrium.",
+      "$E_i$ bends by $qV_{bi}$ across the depletion region.",
+      "The field is zero only outside the depletion region."
+     ]
+    }
+   ],
+   "traps": [
+    "Depletion capacitance goes as 1/W, so it **falls** with reverse bias. Abrupt junction: $C \\propto V^{-1/2}$. Linearly graded: $C \\propto V^{-1/3}$, and $W \\propto V^{1/3}$.",
+    "Read which $n_i$ the question gives. With $1.5\\times10^{10}$ cm⁻³ the textbook junction gives 0.693 V instead of 0.714 V. Both are “correct” for their $n_i$.",
+    "$V_{bi}$ **falls** as temperature rises, because $n_i^2$ grows faster than kT/q.",
+    "The depletion region lies mostly in the **lightly** doped side. Many options swap this."
+   ],
+   "formula": "W=\\sqrt{\\frac{2\\varepsilon_s}{q}\\,(V_{bi}-V)\\left(\\frac{1}{N_A}+\\frac{1}{N_D}\\right)},\\quad N_A x_p = N_D x_n",
+   "formulaLabel": "Depletion width and charge balance",
+   "_id": "g27"
+  },
+  {
+   "type": "doneWhen",
+   "text": "You can explain to a friend, using the words *depletion region* and *built-in potential*, why almost no current flows when the junction is reverse biased, and say which side the depletion region grows into.",
+   "_id": "g28"
+  },
+  {
+   "type": "upNext",
+   "teaser": "Lower the wall a little and current rises a little. Lower it a bit more and it multiplies tenfold every 60 mV. Here is the equation behind that.",
+   "_id": "g29"
+  }
+ ],
+ "meta": {
+  "source": "human"
+ }
+}

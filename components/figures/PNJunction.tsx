@@ -13,10 +13,11 @@ const PRESETS = [
   { label: 'n⁺p 10¹⁵ / 10¹⁸', a: 15, d: 18 },
 ];
 
-export default function PNJunction() {
-  const [la, setLa] = useState(17); // log10 NA
-  const [ld, setLd] = useState(15); // log10 ND
-  const [T, setT] = useState(300);
+export default function PNJunction({ NA: NA0, ND: ND0, T: T0 }: { NA?: number; ND?: number; T?: number } = {}) {
+  const clampLog = (v: number | undefined, d: number) => (v && v > 0 ? Math.min(18, Math.max(14, Math.round(Math.log10(v) * 10) / 10)) : d);
+  const [la, setLa] = useState(() => clampLog(NA0, 17)); // log10 NA
+  const [ld, setLd] = useState(() => clampLog(ND0, 15)); // log10 ND
+  const [T, setT] = useState(T0 && T0 >= 250 && T0 <= 400 ? T0 : 300);
   const [t, setTt] = useState(0); // 0 = apart, 1 = equilibrium
   const [joining, setJoining] = useState(false);
   const reduced = useReducedMotion();

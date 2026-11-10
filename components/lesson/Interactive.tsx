@@ -25,7 +25,7 @@ const LETTERS = ['A', 'B', 'C', 'D', 'E'];
 
 
 
-function Question({ q, idx, onAnswer }: { q: MCQ; idx: number; onAnswer: (correct: boolean) => void }) {
+function Question({ q, idx, onAnswer, fmt = rich, note }: { q: MCQ; idx: number; onAnswer: (correct: boolean) => void; fmt?: (s: string) => ReactNode; note?: ReactNode }) {
   const [picked, setPicked] = useState<number | null>(null);
   const answered = picked !== null;
   return (
@@ -34,9 +34,10 @@ function Question({ q, idx, onAnswer }: { q: MCQ; idx: number; onAnswer: (correc
         <span className="mt-[3px] font-mono text-xs text-muted">{String(idx + 1).padStart(2, '0')}</span>
         <p className="text-[17px] font-medium leading-snug">
           {q.tag && <span className="mr-2 rounded-md border border-line px-1.5 py-0.5 align-middle font-mono text-[10.5px] font-normal text-muted">{q.tag}</span>}
-          {rich(q.stem)}
+          {fmt(q.stem)}
         </p>
       </div>
+      {note}
       <div className="space-y-2.5" role="radiogroup" aria-label={`Question ${idx + 1}`}>
         {q.options.map((o, i) => {
           const isRight = answered && i === q.answer;
@@ -51,10 +52,10 @@ function Question({ q, idx, onAnswer }: { q: MCQ; idx: number; onAnswer: (correc
                 onClick={() => { setPicked(i); onAnswer(i === q.answer); }}
               >
                 <span className="letter">{isRight ? <IconCheck size={14} /> : LETTERS[i]}</span>
-                <span className="min-w-0 flex-1">{rich(o)}</span>
+                <span className="min-w-0 flex-1">{fmt(o)}</span>
               </button>
               {answered && (i === picked || i === q.answer) && (
-                <p className="why" aria-live="polite"><span className={`font-semibold ${i === q.answer ? 'text-[var(--good)]' : 'text-[var(--bad)]'}`}>{i === q.answer ? (i === picked ? 'Right. ' : 'Correct answer. ') : 'Not quite. '}</span>{rich(q.why[i])}</p>
+                <p className="why" aria-live="polite"><span className={`font-semibold ${i === q.answer ? 'text-[var(--good)]' : 'text-[var(--bad)]'}`}>{i === q.answer ? (i === picked ? 'Right. ' : 'Correct answer. ') : 'Not quite. '}</span>{fmt(q.why[i])}</p>
               )}
             </div>
           );
@@ -64,7 +65,7 @@ function Question({ q, idx, onAnswer }: { q: MCQ; idx: number; onAnswer: (correc
         <details className="mt-2 pl-[42px] text-[14px] text-muted">
           <summary className="min-h-[36px] cursor-pointer py-2">Why the other options are wrong</summary>
           <ul className="space-y-1.5 pb-1">
-            {q.options.map((_, i) => (i !== picked && i !== q.answer ? <li key={i}><span className="font-mono text-xs">{LETTERS[i]}</span> · {rich(q.why[i])}</li> : null))}
+            {q.options.map((_, i) => (i !== picked && i !== q.answer ? <li key={i}><span className="font-mono text-xs">{LETTERS[i]}</span> · {fmt(q.why[i])}</li> : null))}
           </ul>
         </details>
       )}
@@ -72,7 +73,7 @@ function Question({ q, idx, onAnswer }: { q: MCQ; idx: number; onAnswer: (correc
   );
 }
 
-export function Quiz({ id, questions, title = 'Quiz', intro, onComplete }: { id: string; questions: MCQ[]; title?: string; intro?: ReactNode; onComplete?: (correct: number, total: number) => void }) {
+export function Quiz({ id, questions, title = 'Quiz', intro, onComplete, fmt, notes }: { id: string; questions: MCQ[]; title?: string; intro?: ReactNode; onComplete?: (correct: number, total: number) => void; fmt?: (s: string) => ReactNode; notes?: ReactNode[] }) {
   const [results, setResults] = useState<Record<number, boolean>>({});
   const [round, setRound] = useState(0);
   const answered = Object.keys(results).length;
@@ -90,7 +91,7 @@ export function Quiz({ id, questions, title = 'Quiz', intro, onComplete }: { id:
         <div className="shrink-0 text-right font-mono text-sm tabular-nums text-muted" aria-live="polite">{questions.length > 5 ? <>{answered}/{questions.length} answered<br />{correct} right</> : <>{correct}/{questions.length}</>}</div>
       </div>
       <ol key={round} className="space-y-9">
-        {questions.map((q, i) => <Question key={i} q={q} idx={i} onAnswer={(ok) => setResults((r) => (i in r ? r : { ...r, [i]: ok }))} />)}
+        {questions.map((q, i) => <Question key={i} q={q} idx={i} fmt={fmt} note={notes?.[i]} onAnswer={(ok) => setResults((r) => (i in r ? r : { ...r, [i]: ok }))} />)}
       </ol>
       {answered === questions.length && (
         <div className="mt-7 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-card px-4 py-3" role="status">

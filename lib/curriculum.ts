@@ -1,3 +1,4 @@
+import { PUBLISHED } from './publishedIndex';
 /**
  * The full UGC NET Electronic Science (Code 88) map: 10 units, every lesson claim-title.
  * `written: true` marks lessons that have a full page today. Everything else renders as "Coming soon".
@@ -10,6 +11,8 @@ export type LessonRef = {
   minutes?: number;
   written?: boolean;
   project?: boolean;
+  published?: boolean; // AI-written, reviewed and published to the repo
+  custom?: boolean; // a topic added by the learner, not in the official map
 };
 
 export type Part = { title: string; milestone: string; lessons: LessonRef[] };
@@ -311,6 +314,17 @@ export const UNITS: Unit[] = [
     }],
   },
 ];
+
+// Lessons published from the AI layer become live; published custom topics join their unit as an extra part.
+for (const pub of PUBLISHED) {
+  const u = UNITS.find((x) => x.slug === pub.unit);
+  if (!u) continue;
+  const existing = u.parts.flatMap((p) => p.lessons).find((l) => l.id === pub.id);
+  if (existing) { existing.written = true; existing.published = true; existing.minutes = existing.minutes ?? pub.minutes; continue; }
+  let part = u.parts.find((p) => p.title === 'Added topics');
+  if (!part) { part = { title: 'Added topics', milestone: u.milestone, lessons: [] }; u.parts.push(part); }
+  part.lessons.push({ id: pub.id, number: pub.number, title: pub.title, minutes: pub.minutes, written: true, published: true, custom: true });
+}
 
 export const allLessons = (u: Unit) => u.parts.flatMap((p) => p.lessons);
 export const unitBySlug = (slug: string) => UNITS.find((u) => u.slug === slug);

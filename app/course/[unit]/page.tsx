@@ -2,7 +2,6 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { UNITS, allLessons, lessonHref, unitBySlug } from '@/lib/curriculum';
-import { LESSONS } from '@/content/lessons';
 import { Milestone } from '@/components/course/Milestone';
 import { LessonDoneMark, UnitBar, UnitDoneCount } from '@/components/course/UnitProgress';
 import { IconArrow, IconBack } from '@/components/Icons';
@@ -20,7 +19,7 @@ export default async function UnitPage({ params }: Params) {
   const u = unitBySlug((await params).unit);
   if (!u) notFound();
   const ls = allLessons(u);
-  const live = ls.filter((l) => l.written && LESSONS[l.id]);
+  const live = ls.filter((l) => l.written);
   const idx = UNITS.indexOf(u);
   const prevU = UNITS[idx - 1], nextU = UNITS[idx + 1];
   let n = 0;
@@ -59,7 +58,7 @@ export default async function UnitPage({ params }: Params) {
           </div>
           <ol className="mt-4 divide-y divide-[var(--line)] overflow-hidden rounded-2xl border border-line bg-card">
             {part.lessons.map((l) => {
-              const ok = l.written && LESSONS[l.id];
+              const ok = l.written;
               const inner = (
                 <>
                   {ok ? <LessonDoneMark id={l.id} /> : <span className="h-6 w-6 shrink-0" aria-hidden />}

@@ -9,7 +9,7 @@ type Item = { title: string; number: string; unitRoman: string; unitTitle: strin
 
 const ITEMS: Item[] = UNITS.flatMap((u) => [
   { title: u.title, number: `Unit ${u.roman}`, unitRoman: u.roman, unitTitle: u.short, hue: u.hue, href: `/course/${u.slug}/` },
-  ...allLessons(u).map((l) => ({ title: l.title, number: l.number, unitRoman: u.roman, unitTitle: u.short, hue: u.hue, href: l.written ? lessonHref(u, l) : null })),
+  ...allLessons(u).map((l) => ({ title: l.title, number: l.number, unitRoman: u.roman, unitTitle: u.short, hue: u.hue, href: l.written ? lessonHref(u, l) : `/study/?id=${l.id}` })),
 ]).concat([{ title: 'Unit I practice set', number: 'Practice', unitRoman: 'I', unitTitle: 'Devices', hue: 35, href: '/practice/unit-1/' }]);
 
 function score(item: Item, terms: string[]) {
@@ -88,7 +88,7 @@ export default function Search() {
                 <span className="mt-0.5 w-12 shrink-0 font-mono text-xs text-muted">{it.number}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[15px] leading-snug">{it.title}</span>
-                  <span className="mt-0.5 block text-xs text-muted">Unit {it.unitRoman} · {it.unitTitle}{it.href ? '' : ' · Coming soon'}</span>
+                  <span className="mt-0.5 block text-xs text-muted">Unit {it.unitRoman} · {it.unitTitle}{it.href?.startsWith('/study') ? ' · Generate with AI' : ''}</span>
                 </span>
               </div>
             );

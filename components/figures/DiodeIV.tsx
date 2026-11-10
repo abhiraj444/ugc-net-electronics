@@ -7,11 +7,11 @@ import { Axes, linear, path } from '../ui/plot';
 
 const V_MIN = -1, V_MAX = 0.85;
 
-export default function DiodeIV() {
-  const [V, setV] = useState(0.6);
-  const [lIs, setLIs] = useState(-14); // log10 Is at 300 K, amps
-  const [n, setN] = useState(1);
-  const [T, setT] = useState(300);
+export default function DiodeIV({ V: V0, Is: Is0, n: n0, T: T0 }: { V?: number; Is?: number; n?: number; T?: number } = {}) {
+  const [V, setV] = useState(V0 ?? 0.6);
+  const [lIs, setLIs] = useState(Is0 && Is0 > 0 ? Math.log10(Is0) : -14); // log10 Is at 300 K, amps
+  const [n, setN] = useState(n0 ?? 1);
+  const [T, setT] = useState(T0 ?? 300);
   const [scale, setScale] = useState<'lin' | 'log'>('lin');
   const { beacon, touched } = useBeacon();
   const { ref, w } = useWidth<HTMLDivElement>();

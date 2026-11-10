@@ -6,11 +6,14 @@ import { LESSONS } from '@/content/lessons';
 import { Hook, MathBlock, Remember, UpNext } from '@/components/lesson/Blocks';
 import { DoneWhen, Quiz, ReadingProgress } from '@/components/lesson/Interactive';
 import { LessonBottomBar, LessonSidebar } from '@/components/lesson/LessonNav';
+import { publishedById } from '@/lib/published';
+import JsonLessonPage from '@/components/ai/JsonLessonPage';
+import { lessonLink } from '@/lib/links';
 
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return WRITTEN.filter(({ lesson }) => LESSONS[lesson.id]).map(({ unit, lesson }) => ({ unit: unit.slug, lesson: lesson.id }));
+  return WRITTEN.filter(({ lesson }) => LESSONS[lesson.id] || publishedById(lesson.id)).map(({ unit, lesson }) => ({ unit: unit.slug, lesson: lesson.id }));
 }
 
 type Params = { params: Promise<{ unit: string; lesson: string }> };
@@ -25,7 +28,12 @@ export default async function LessonPage({ params }: Params) {
   const { unit: unitSlug, lesson: id } = await params;
   const found = findLesson(id);
   const c = LESSONS[id];
-  if (!found || !c || found.unit.slug !== unitSlug) notFound();
+  if (!found || found.unit.slug !== unitSlug) notFound();
+  if (!c) {
+    const pub = publishedById(id);
+    if (!pub) notFound();
+    return <JsonLessonPage doc={pub} tag={`AI-written${pub.meta?.model ? ' · ' + pub.meta.model : ''} · reviewed`} />;
+  }
   const { unit, lesson, next } = found;
   const builds = c.buildsOn.map((b) => findLesson(b)).filter(Boolean) as NonNullable<ReturnType<typeof findLesson>>[];
 
@@ -82,7 +90,7 @@ export default async function LessonPage({ params }: Params) {
 
           <DoneWhen id={id}>{c.doneWhen}</DoneWhen>
 
-          {next && <UpNext number={next.number} title={next.title} href={next.written && LESSONS[next.id] ? lessonHref(unit, next) : undefined} teaser={c.upNextTeaser} />}
+          {next && <UpNext number={next.number} title={next.title} href={next.written ? lessonHref(unit, next) : lessonLink(next.id)} teaser={c.upNextTeaser} />}
         </article>
       </div>
       <LessonBottomBar unitSlug={unit.slug} current={id} />
