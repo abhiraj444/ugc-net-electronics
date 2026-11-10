@@ -2,6 +2,7 @@ import katex from 'katex';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { rich } from '@/lib/rich';
+import { SectionDeeper } from '@/components/ai/Launchers';
 
 /** Inline maths, rendered at build time. */
 export function M({ children }: { children: string }) {
@@ -15,7 +16,7 @@ export function MathBlock({ children, label }: { children: string; label?: strin
   return <div className="eq-display" role="math" aria-label={label ?? children} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-export function Section({ n, title, children }: { n: number; title: string; children: ReactNode }) {
+export function Section({ n, title, children, deeper = true }: { n: number; title: string; children: ReactNode; deeper?: boolean }) {
   const id = `s${n}`;
   return (
     <section className="mt-14 scroll-mt-24" aria-labelledby={id}>
@@ -24,6 +25,7 @@ export function Section({ n, title, children }: { n: number; title: string; chil
         <span className="font-mono text-[26px] leading-none text-[var(--line-strong)] sm:text-[32px]" aria-hidden>{String(n).padStart(2, '0')}</span>
       </div>
       <div className="prose-read mt-5">{children}</div>
+      {deeper && <SectionDeeper title={title} />}
     </section>
   );
 }

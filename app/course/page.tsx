@@ -4,6 +4,7 @@ import { UNITS, WRITTEN, allLessons, totalLessons } from '@/lib/curriculum';
 import { Milestone } from '@/components/course/Milestone';
 import { UnitBar, UnitDoneCount, UpNextCard } from '@/components/course/UnitProgress';
 import { IconArrow } from '@/components/Icons';
+import { AddTopicButton, CustomTopics } from '@/components/ai/Launchers';
 
 export const metadata: Metadata = { title: 'Course map' };
 
@@ -58,6 +59,15 @@ export default function CoursePage() {
             );
           })}
         </ol>
+      </section>
+
+      <section className="mt-12 max-w-[720px]" aria-labelledby="mine-h">
+        <div className="flex flex-wrap items-baseline justify-between gap-3 border-t border-line pt-5">
+          <h2 id="mine-h" className="text-[23px] font-semibold tracking-tight">Your topics</h2>
+          <AddTopicButton />
+        </div>
+        <p className="mb-4 mt-2 text-[15px] text-muted">Anything you want to learn beyond the map. AI proposes a short tree of lessons; you tick, reorder and rename, then each becomes a lesson you can generate. Saved on this device.</p>
+        <CustomTopics all />
       </section>
     </main>
   );

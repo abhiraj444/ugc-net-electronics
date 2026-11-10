@@ -5,6 +5,7 @@ import { UNITS, allLessons, lessonHref, unitBySlug } from '@/lib/curriculum';
 import { Milestone } from '@/components/course/Milestone';
 import { LessonDoneMark, UnitBar, UnitDoneCount } from '@/components/course/UnitProgress';
 import { IconArrow, IconBack } from '@/components/Icons';
+import { AddTopicButton, CustomTopics } from '@/components/ai/Launchers';
 
 export const dynamicParams = false;
 export function generateStaticParams() { return UNITS.map((u) => ({ unit: u.slug })); }
@@ -65,9 +66,9 @@ export default async function UnitPage({ params }: Params) {
                   <span className="w-10 shrink-0 pt-0.5 font-mono text-[12px] text-muted">{l.number}</span>
                   <span className="min-w-0 flex-1">
                     <span className={`block text-[16px] leading-snug ${ok ? 'font-medium' : ''}`}>{l.title}</span>
-                    <span className="mt-1 block text-[12.5px] text-muted">{ok ? `About ${l.minutes} min · Interactive figure · Quiz · NET corner` : l.project ? 'Project · Coming soon' : 'Coming soon'}</span>
+                    <span className="mt-1 block text-[12.5px] text-muted">{ok ? `About ${l.minutes ?? 15} min · ${l.published ? 'AI-written, reviewed · ' : 'Interactive figure · '}Quiz · NET corner` : l.project ? 'Project · Coming soon · Generate with AI' : 'Coming soon · Generate with AI'}</span>
                   </span>
-                  {ok && <IconArrow size={17} className="mt-1 shrink-0 text-muted" />}
+                  <IconArrow size={17} className="mt-1 shrink-0 text-muted" />
                 </>
               );
               return (
@@ -75,7 +76,7 @@ export default async function UnitPage({ params }: Params) {
                   {ok ? (
                     <Link href={lessonHref(u, l)} className="flex items-start gap-3 px-4 py-4 transition-colors hover:bg-[var(--accent-tint)]">{inner}</Link>
                   ) : (
-                    <div className="flex items-start gap-3 px-4 py-4 opacity-60" aria-disabled="true">{inner}</div>
+                    <Link href={`/study/?id=${l.id}`} className="flex items-start gap-3 px-4 py-4 text-muted transition-colors hover:bg-[var(--accent-tint)]">{inner}</Link>
                   )}
                 </li>
               );
@@ -83,6 +84,15 @@ export default async function UnitPage({ params }: Params) {
           </ol>
         </section>
       ))}
+
+      <section className="mt-12" aria-label="Your topics">
+        <div className="flex flex-wrap items-baseline justify-between gap-3 border-t border-line pt-5">
+          <h2 className="text-[22px] font-semibold tracking-tight">Your topics</h2>
+          <AddTopicButton unit={u.slug} />
+        </div>
+        <p className="mb-4 mt-2 text-[14.5px] text-muted">Go deeper than the syllabus map. AI suggests a few lessons, you pick, and they are saved on this device under this unit.</p>
+        <CustomTopics unit={u.slug} />
+      </section>
 
       <section className="reveal mt-12 rounded-2xl border border-line bg-[var(--accent-tint)] p-5">
         <div className="eyebrow">Unit {u.roman} practice</div>
@@ -92,7 +102,10 @@ export default async function UnitPage({ params }: Params) {
             <Link href="/practice/unit-1/" className="btn btn-primary mt-4">Open the practice set <IconArrow size={17} /></Link>
           </>
         ) : (
-          <p className="mt-1.5 text-[15.5px] text-muted">The practice set for this unit arrives with its lessons.</p>
+          <>
+            <p className="mt-1.5 text-[15.5px]">15 exam-style practice questions for this unit, written by AI on this device. Practice questions, never previous-year papers.</p>
+            <Link href={`/study/?practice=${u.slug}`} className="btn btn-primary mt-4">Practice · generate a set <IconArrow size={17} /></Link>
+          </>
         )}
       </section>
 

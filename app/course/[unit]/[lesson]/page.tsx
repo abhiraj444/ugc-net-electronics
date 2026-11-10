@@ -8,6 +8,7 @@ import { DoneWhen, Quiz, ReadingProgress } from '@/components/lesson/Interactive
 import { LessonBottomBar, LessonSidebar } from '@/components/lesson/LessonNav';
 import { publishedById } from '@/lib/published';
 import JsonLessonPage from '@/components/ai/JsonLessonPage';
+import { DoubtLauncher, GoDeeperButton } from '@/components/ai/Launchers';
 import { lessonLink } from '@/lib/links';
 
 export const dynamicParams = false;
@@ -65,6 +66,8 @@ export default async function LessonPage({ params }: Params) {
             )}
           </header>
 
+          <div className="reveal mt-5 flex flex-wrap gap-2"><GoDeeperButton lessonId={id} query={lesson.title} /></div>
+
           <Hook>{c.hook}</Hook>
           {c.body}
 
@@ -89,6 +92,8 @@ export default async function LessonPage({ params }: Params) {
           </section>
 
           <DoneWhen id={id}>{c.doneWhen}</DoneWhen>
+
+          <div className="mt-10"><DoubtLauncher title={`${lesson.number} ${lesson.title}`} contextText={`${c.dek}\nRemember: ${c.remember}\nNET formula: ${c.net.formula}`} /></div>
 
           {next && <UpNext number={next.number} title={next.title} href={next.written ? lessonHref(unit, next) : lessonLink(next.id)} teaser={c.upNextTeaser} />}
         </article>
