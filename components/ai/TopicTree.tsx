@@ -87,7 +87,7 @@ export default function TopicTree({ open, onClose, unit, anchor, anchorTitle, in
     const letters = 'abcdefghijklmnopqrstuvwxyz';
     const lessons: AiLesson[] = flat.map((r, k) => ({
       id: `${topicId}-${k + 1}`, unit: target,
-      number: anchorNo ? `${anchorNo}${letters[k] ?? k + 1}` : u ? `${u.n}.+${existingCount + k + 1}` : `M.${existingCount + k + 1}`,
+      number: anchorNo ? `${anchorNo}${letters[k] ?? k + 1}` : u ? `${u.n}.A${existingCount + k + 1}` : `M${existingCount + k + 1}`,
       title: r.title.trim(), dek: r.why, netWeight: r.netWeight, minutes: r.minutes, buildsOn: a ? [a.lesson.id] : [],
       blocks: [], steps: {}, versions: [], status: 'empty', updatedAt: Date.now(), meta: { custom: true, topicId },
     }));
@@ -106,7 +106,7 @@ export default function TopicTree({ open, onClose, unit, anchor, anchorTitle, in
           <div className="flex items-start gap-2 p-2.5">
             <label className="grid h-11 w-9 shrink-0 place-items-center"><input type="checkbox" className="h-5 w-5 accent-[var(--accent-deep)]" checked={r.on} onChange={(e) => update(r.key, { on: e.target.checked })} aria-label={`Include ${r.title}`} /></label>
             <div className="min-w-0 flex-1">
-              <input className="field !min-h-[40px] !py-1.5 !text-[15.5px] font-medium" value={r.title} onChange={(e) => update(r.key, { title: e.target.value })} aria-label="Lesson title" />
+              <textarea rows={2} className="field !min-h-0 resize-none !py-1.5 !font-ui !text-[15px] font-medium leading-snug" value={r.title} onChange={(e) => update(r.key, { title: e.target.value.replace(/\n/g, ' ') })} aria-label="Lesson title" />
               <p className="mt-1.5 text-[13.5px] leading-snug text-muted">{r.why}</p>
               <div className="mt-1.5 flex flex-wrap gap-1.5"><span className={`chip !h-6 !text-[11.5px] ${r.netWeight === 'High' ? 'chip-accent' : ''}`}>NET {r.netWeight}</span><span className="chip !h-6 !text-[11.5px]">{r.minutes} min</span>{r.prerequisites.slice(0, 2).map((p) => <span key={p} className="chip !h-6 max-w-[200px] truncate !text-[11.5px]">needs {p}</span>)}</div>
             </div>

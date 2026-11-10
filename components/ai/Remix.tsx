@@ -10,10 +10,10 @@ import { ErrorNote, Sheet, UnlockBar } from './ui';
 export function RemixMenu({ lessonId, sectionIndex, disabled, start }: { lessonId: string; sectionIndex: number; disabled?: boolean; start: (fn: (h: Hooks) => Promise<void>) => void }) {
   const go = (m: RemixMode) => start((h) => remixSection(lessonId, sectionIndex, m, h));
   return (
-    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Remix this section">
-      <span className="text-[13px] text-muted">Remix:</span>
+    <div className="contents" role="group" aria-label="Remix this section">
+      <span className="self-center text-[13px] text-muted">Remix</span>
       <button className="btn btn-sm" disabled={disabled} onClick={() => go('simpler')}>Simpler</button>
-      <button className="btn btn-sm" disabled={disabled} onClick={() => go('example')}>Another example</button>
+      <button className="btn btn-sm" disabled={disabled} onClick={() => go('example')}>New example</button>
       <button className="btn btn-sm" disabled={disabled} onClick={() => go('hinglish')}>Hinglish</button>
     </div>
   );

@@ -222,7 +222,7 @@ export async function resolveTask(task: Task) {
   const d = db();
   const prof = await d.profiles.get(task);
   let prov = prof?.providerId ? await d.providers.get(prof.providerId) : undefined;
-  if (!prov) prov = (await d.providers.toArray())[0];
+  if (!prov) prov = (await d.providers.orderBy('name').toArray()).sort((a, b) => a.createdAt - b.createdAt)[0];
   if (!prov) throw new ProviderError('No AI provider yet.', 'Open Settings and add a provider with its API key.');
   const model = (prof?.providerId === prov.id && prof?.model) || prov.defaultModel || prov.models[0];
   if (!model) throw new ProviderError(`${prov.name} has no model selected.`, 'Open Settings, pick the provider and add a model.');

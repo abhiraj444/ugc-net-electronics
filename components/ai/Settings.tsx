@@ -229,7 +229,7 @@ function Profiles() {
   };
   return (
     <section aria-label="Task profiles">
-      <SectionHead n={2} title="Which model does what">Each job can use a different provider, model and settings. For example, a cheap fast model for doubts and a strong one for lessons. Blank means the first provider and its default model.</SectionHead>
+      <SectionHead n={2} title="Which model does what">Each job can use a different provider, model and settings. For example, a cheap fast model for doubts and a strong one for lessons. Blank means the provider you added first, with its default model.</SectionHead>
       <div className="mt-5 space-y-3">
         {TASKS.map((t) => {
           const pf = profs.find((x) => x.task === t);
@@ -244,7 +244,7 @@ function Profiles() {
               <div className="grid gap-3 border-t border-line px-4 py-4 sm:grid-cols-2">
                 <Field label="Provider">{(i) => (
                   <select id={i} className="field" value={pf?.providerId ?? ''} onChange={(e) => save(t, { providerId: e.target.value, model: '' })}>
-                    <option value="">Default (first provider)</option>
+                    <option value="">Default (the provider you added first)</option>
                     {provs.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
                 )}</Field>

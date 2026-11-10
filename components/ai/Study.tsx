@@ -87,7 +87,7 @@ function ModelLine() {
 function Progress({ l, run, onStop }: { l: AiLesson; run: Run; onStop: () => void }) {
   const steps = stepOrder(l);
   return (
-    <div className="sticky z-20 mt-6 rounded-2xl border border-line bg-card p-4 shadow-[var(--shadow)]" style={{ top: 'calc(64px + var(--safe-t))' }} role="status" aria-live="polite">
+    <div className="sticky z-20 -mt-2 mb-6 rounded-2xl border border-line bg-[color-mix(in_oklab,var(--card)_94%,transparent)] px-4 py-3 shadow-[var(--shadow)] backdrop-blur-md" style={{ top: 'calc(60px + var(--safe-t))' }} role="status" aria-live="polite">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="eyebrow">Writing · step {Math.max(1, steps.indexOf(run?.step ?? '') + 1)} of {steps.length}</div>
@@ -196,6 +196,7 @@ function LessonStudy({ id }: { id: string }) {
       <div className="mx-auto flex max-w-[1180px] gap-10 px-4 sm:px-6 lg:px-8">
         {unit && <LessonSidebar unitSlug={unit.slug} current={id} />}
         <article className="min-w-0 max-w-[720px] flex-1 pb-16 pt-7 sm:pt-10">
+          {running && <Progress l={l} run={run} onStop={stop} />}
           {l.status === 'empty' && !running && !started ? (
             <>
               {header}
@@ -220,7 +221,6 @@ function LessonStudy({ id }: { id: string }) {
               {running && run?.partial && <div className="mt-6 rounded-xl border border-dashed border-line px-4 py-3" aria-hidden><p className="typing">{previewOf(run.partial)}</p></div>}
             </LessonView>
           )}
-          {running && <Progress l={l} run={run} onStop={stop} />}
           {err && <div className="mt-6"><ErrorNote msg={err.msg} hint={err.hint}><div className="mt-2 flex flex-wrap gap-2"><button className="btn btn-sm" onClick={generate}>{started ? 'Resume' : 'Try again'}</button><button className="btn btn-sm" onClick={() => setErr(null)}>Dismiss</button></div></ErrorNote></div>}
           <div className="mt-10"><DoubtLauncher lessonId={id} /></div>
         </article>
