@@ -202,3 +202,22 @@ details.describe[open] .chev { transform: rotate(90deg); }
   --accent-tint: color-mix(in oklab, var(--accent) 8%, var(--card));
   --accent-soft: color-mix(in oklab, var(--accent) 18%, var(--card));
 }
+
+/* ---------- Forms (Settings, AI tools) ---------- */
+.field { display: block; width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--card); color: var(--ink); font-size: 16px; line-height: 1.4; }
+.field:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+textarea.field { font-family: var(--font-mono), ui-monospace, monospace; font-size: 14px; min-height: 96px; resize: vertical; }
+select.field { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 34px; }
+.flabel { display: block; font-size: 13.5px; color: var(--muted); margin-bottom: 6px; }
+.field-err { border-color: var(--bad); }
+.note-bad { border: 1px solid color-mix(in oklab, var(--bad) 35%, var(--line)); background: var(--bad-tint); border-radius: 12px; padding: 10px 12px; font-size: 14.5px; line-height: 1.5; }
+.note-good { border: 1px solid color-mix(in oklab, var(--good) 35%, var(--line)); background: var(--good-tint); border-radius: 12px; padding: 10px 12px; font-size: 14.5px; line-height: 1.5; }
+.ai-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: 999px; border: 1px dashed var(--line-strong); font-family: var(--font-mono), monospace; font-size: 11px; color: var(--muted); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.typing { white-space: pre-wrap; word-break: break-word; font-family: var(--font-literata), Georgia, serif; font-size: 17px; line-height: 1.6; color: color-mix(in oklab, var(--ink) 70%, var(--ground)); }
+.typing::after { content: ''; display: inline-block; width: 8px; height: 1.05em; vertical-align: -2px; margin-left: 2px; background: var(--accent); animation: caret 1s steps(2) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .typing::after { animation: none; } }
+.icon-btn { display: inline-grid; place-items: center; min-width: 44px; min-height: 44px; border-radius: 12px; color: var(--muted); }
+.icon-btn:hover { color: var(--ink); background: var(--accent-tint); }
+.block-tools { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.custom-mark { border-left: 2px dashed var(--accent); }

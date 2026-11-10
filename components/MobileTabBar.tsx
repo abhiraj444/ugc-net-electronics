@@ -7,6 +7,7 @@ const TABS = [
   { href: '/course/', label: 'Course', match: (p: string) => p.startsWith('/course') },
   { href: '/practice/unit-1/', label: 'Practice', match: (p: string) => p.startsWith('/practice') },
   { href: '/progress/', label: 'Progress', match: (p: string) => p.startsWith('/progress') },
+  { href: '/settings/', label: 'Settings', match: (p: string) => p.startsWith('/settings') },
 ];
 
 /** Thumb-reachable navigation on phones. Lesson pages show their own lesson bar instead. */
@@ -18,7 +19,7 @@ export default function MobileTabBar() {
     <>
       <div className="h-[64px] md:hidden" aria-hidden />
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-[color-mix(in_oklab,var(--card)_92%,transparent)] backdrop-blur-md md:hidden" style={{ paddingBottom: 'var(--safe-b)' }} aria-label="Main">
-        <div className="grid h-[58px] grid-cols-4">
+        <div className="grid h-[58px] grid-cols-5">
           {TABS.map((t) => {
             const on = t.match(path);
             return (

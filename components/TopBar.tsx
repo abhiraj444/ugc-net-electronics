@@ -9,6 +9,7 @@ const NAV = [
   { href: '/course/', label: 'Course' },
   { href: '/practice/unit-1/', label: 'Practice' },
   { href: '/progress/', label: 'Progress' },
+  { href: '/settings/', label: 'Settings' },
 ];
 
 export default function TopBar() {
