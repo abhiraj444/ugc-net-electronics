@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { importLessonJson } from '@/lib/ai/migrate';
 import { FIGURE_MODES, setFigureMode, useFigureMode } from '@/lib/ai/figureMode';
 import { db, exportAll, importAll, kvGet, kvSet, TASK_LABEL, TASKS, uid, type Profile, type Provider, type Task } from '@/lib/ai/db';
-import { PARAM_FIELDS, PRESETS, errorText, listModels, parseJsonField, streamChat } from '@/lib/ai/providers';
+import { PARAM_FIELDS, PRESETS, errorText, listModels, parseJsonField, streamChat, setProviderForAll } from '@/lib/ai/providers';
 import { disableEncryption, enableEncryption, lock, revealSecret, sealSecret } from '@/lib/ai/crypto';
 import { DEFAULT_PROMPTS, DEFAULT_MD_PROMPTS, OUTPUT_FORMATS, getPrompts, setPrompt, getLearner, setOutputFormat, type Learner, type OutputFormat } from '@/lib/ai/prompts';
 import { getGitHub, setGitHub, testGitHub, GH_DEFAULT } from '@/lib/ai/github';
@@ -48,6 +48,8 @@ async function newProvider(presetId: string) {
 
 function Providers({ onEdit }: { onEdit: (id: string) => void }) {
   const provs = useLiveQuery(() => db().providers.orderBy('name').toArray(), []);
+  const defId = useLiveQuery(async () => (await db().kv.get('defaultProvider'))?.value as string | undefined, []);
+  const activeId = defId && provs?.some((p) => p.id === defId) ? defId : provs?.slice().sort((a, b) => a.createdAt - b.createdAt)[0]?.id;
   const [preset, setPreset] = useState('openrouter');
   return (
     <section aria-label="Providers">
@@ -63,6 +65,9 @@ function Providers({ onEdit }: { onEdit: (id: string) => void }) {
               </span>
               <span className="text-[14px] font-medium text-[var(--accent-deep)]">Edit</span>
             </button>
+            {p.id === activeId
+              ? <p className="mt-1.5 px-1 text-[13px] font-medium text-[var(--accent-deep)]">✓ In use for all jobs (unless a job below picks another)</p>
+              : <button className="btn btn-sm mt-1.5" onClick={() => setProviderForAll(p.id)}>Use {p.name} for everything</button>}
           </li>
         ))}
       </ul>

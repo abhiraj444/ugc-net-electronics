@@ -37,7 +37,7 @@ export function SecretInput({ id, value, onChange, placeholder }: { id?: string;
 
 export function ErrorNote({ msg, hint, children }: { msg: string; hint?: string; children?: ReactNode }) {
   return (
-    <div className="note-bad" role="alert">
+    <div className="note-bad min-w-0 [overflow-wrap:anywhere]" role="alert">
       <div className="font-medium">{msg}</div>
       {hint && <div className="mt-1 text-muted">{hint}</div>}
       {children}

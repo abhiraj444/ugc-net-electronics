@@ -1,5 +1,5 @@
 'use client';
-import { db, type AdapterType, type Profile, type Provider, type Task } from './db';
+import { db, kvGet, kvSet, type AdapterType, type Profile, type Provider, type Task } from './db';
 import { revealSecret } from './crypto';
 
 export type Msg = { role: 'system' | 'user' | 'assistant'; content: string };
@@ -218,10 +218,19 @@ export async function listModels(p: Provider): Promise<string[]> {
 }
 
 /** Resolve a task profile to a provider + model. Falls back to the first provider. */
+/** Make one provider the one every job uses: sets the default and clears per-job provider overrides. */
+export async function setProviderForAll(id: string) {
+  const d = db();
+  await kvSet('defaultProvider', id);
+  const profs = await d.profiles.toArray();
+  for (const p of profs) await d.profiles.put({ ...p, providerId: '', model: '' });
+}
+
 export async function resolveTask(task: Task) {
   const d = db();
   const prof = await d.profiles.get(task);
   let prov = prof?.providerId ? await d.providers.get(prof.providerId) : undefined;
+  if (!prov) { const defId = await kvGet<string>('defaultProvider', ''); if (defId) prov = await d.providers.get(defId); }
   if (!prov) prov = (await d.providers.orderBy('name').toArray()).sort((a, b) => a.createdAt - b.createdAt)[0];
   if (!prov) throw new ProviderError('No AI provider yet.', 'Open Settings and add a provider with its API key.');
   const model = (prof?.providerId === prov.id && prof?.model) || prov.defaultModel || prov.models[0];
@@ -247,6 +256,11 @@ export async function runTask(task: Task, messages: Msg[], o: CallOpts & { lesso
 
 export function errorText(e: unknown) {
   if ((e as Error)?.name === 'AbortError') return { msg: 'Stopped.', hint: undefined };
+  const m = (e as Error)?.message ?? String(e);
+  if (/\b402\b|more credits|can only afford/i.test(m)) {
+    const can = m.match(/afford (\d+)/i)?.[1];
+    return { msg: 'Out of credit on this key.', hint: `The provider says the key's spending limit is nearly used${can ? ` (room for about ${can} tokens)` : ''}. Raise the key's limit or add credit on the provider's site, lower Max tokens in Settings, pick a cheaper model than auto, or switch to another provider. Details: ${m}` };
+  }
   if (e instanceof ProviderError) return { msg: e.message, hint: e.hint };
   return { msg: (e as Error)?.message ?? String(e), hint: undefined };
 }

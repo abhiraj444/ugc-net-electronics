@@ -7,7 +7,7 @@ import { db, kvSet, type AiLesson } from '@/lib/ai/db';
 import { findLesson, lessonHref, unitBySlug } from '@/lib/curriculum';
 import { lessonLink } from '@/lib/links';
 import { applyIssueFix, deleteBlock, ensureLesson, generateLesson, generatePractice, regenerateBlock, replaceBlock, rollback, runStep, stepLabel, stepOrder, type Hooks } from '@/lib/ai/pipeline';
-import { errorText, resolveTask } from '@/lib/ai/providers';
+import { errorText, resolveTask, setProviderForAll } from '@/lib/ai/providers';
 import { getLearner, type Learner } from '@/lib/ai/prompts';
 import { publishLesson } from '@/lib/ai/github';
 import { useHideDiagrams } from '@/lib/ai/figureMode';
@@ -67,16 +67,26 @@ export default function Study() {
 
 function ModelLine() {
   const [s, setS] = useState<string | null>(null);
+  const [cur, setCur] = useState('');
   const [l, setL] = useState<Learner | null>(null);
-  useEffect(() => {
-    resolveTask('lessonWriting').then((r) => setS(`${r.prov.name} · ${r.model}`)).catch(() => setS(''));
-    getLearner().then(setL);
-  }, []);
+  const provs = useLiveQuery(() => db().providers.toArray(), []);
+  const refresh = () => resolveTask('lessonWriting').then((r) => { setS(`${r.prov.name} · ${r.model}`); setCur(r.prov.id); }).catch(() => setS(''));
+  useEffect(() => { refresh(); getLearner().then(setL); }, []);
   if (s === null || !l) return null;
   const setLearner = (patch: Partial<Learner>) => { const n = { ...l, ...patch }; setL(n); kvSet('learner', n); };
   return (
     <div className="mt-5 space-y-4">
-      {s ? <p className="text-[14.5px] text-muted">Writes with <span className="font-mono text-[13px] text-ink">{s}</span> · <Link href="/settings/" className="underline underline-offset-4">change</Link></p>
+      {s ? (
+        <div>
+          <label className="flabel" htmlFor="gen-prov">Writes with</label>
+          {provs && provs.length > 1
+            ? <select id="gen-prov" className="field" value={cur} onChange={async (e) => { await setProviderForAll(e.target.value); refresh(); }}>
+                {provs.map((p) => <option key={p.id} value={p.id}>{p.name} · {p.defaultModel || p.models[0] || 'no model'}</option>)}
+              </select>
+            : <p className="font-mono text-[13px] text-ink">{s}</p>}
+          <p className="mt-1 text-[13px] text-muted">Change models and per-job choices in <Link href="/settings/" className="underline underline-offset-4">Settings</Link>.</p>
+        </div>
+      )
         : <div className="note-bad">No AI provider yet. <Link href="/settings/" className="font-semibold underline underline-offset-4">Add one in Settings</Link>; it takes a minute and your key stays on this device.</div>}
       <div className="flex flex-wrap gap-x-6 gap-y-3">
         <div><div className="flabel">Level</div><div className="flex flex-wrap gap-1.5">{(['beginner', 'intermediate', 'exam-ready'] as const).map((v) => <button key={v} className="btn btn-sm" aria-pressed={l.level === v} onClick={() => setLearner({ level: v })}>{v[0].toUpperCase() + v.slice(1)}</button>)}</div></div>
