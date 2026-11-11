@@ -6,6 +6,7 @@ import { DoneWhen, Quiz, YourGuess } from '@/components/lesson/Interactive';
 import type { FigureBlock, NetQuestion, StoredBlock } from '@/lib/ai/schema';
 import { Md, mdInline } from './Markdown';
 import { looksLikeMermaid } from '@/lib/ai/mermaid';
+import { hiddenBy, useFigureMode } from '@/lib/ai/figureMode';
 
 const Loading = () => <div className="figure my-3 grid h-[260px] place-items-center font-ui text-[14px] text-muted">Loading figure…</div>;
 const FIGS: Record<string, React.ComponentType<Record<string, number>>> = {
@@ -99,7 +100,8 @@ function one(b: StoredBlock, lessonId: string, next?: NextInfo): ReactNode {
 const CLOSERS = new Set(['remember', 'quiz', 'netCorner', 'doneWhen', 'upNext', 'hook']);
 
 /** Renders stored lesson blocks with the same components as the hand-written lessons. */
-export default function BlockRenderer({ blocks, lessonId, next, wrap, after }: { blocks: StoredBlock[]; lessonId: string; next?: NextInfo; wrap?: Wrap; after?: (sectionIndex: number, title: string) => ReactNode }) {
+export default function BlockRenderer({ blocks, lessonId, next, wrap, after, hideDiagrams = false }: { blocks: StoredBlock[]; lessonId: string; next?: NextInfo; wrap?: Wrap; after?: (sectionIndex: number, title: string) => ReactNode; hideDiagrams?: boolean }) {
+  const mode = useFigureMode();
   const out: ReactNode[] = [];
   let sec: { n: number; title: string; items: ReactNode[]; head: ReactNode } | null = null;
   let n = 0;
@@ -110,6 +112,7 @@ export default function BlockRenderer({ blocks, lessonId, next, wrap, after }: {
     sec = null;
   };
   blocks.forEach((b, i) => {
+    if (hiddenBy(b, mode, hideDiagrams)) return;
     const node = one(b, lessonId, next);
     const wrapped = wrap ? wrap(b, i, node) : node;
     if (b.type === 'section') {

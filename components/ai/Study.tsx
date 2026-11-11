@@ -10,6 +10,7 @@ import { applyIssueFix, deleteBlock, ensureLesson, generateLesson, generatePract
 import { errorText, resolveTask } from '@/lib/ai/providers';
 import { getLearner, type Learner } from '@/lib/ai/prompts';
 import { publishLesson } from '@/lib/ai/github';
+import { useHideDiagrams } from '@/lib/ai/figureMode';
 import { previewOf } from '@/lib/ai/ndjson';
 import type { StoredBlock } from '@/lib/ai/schema';
 import { ReadingProgress, Quiz } from '@/components/lesson/Interactive';
@@ -117,6 +118,7 @@ function LessonStudy({ id }: { id: string }) {
   const [panel, setPanel] = useState<'' | 'versions' | 'issues'>('');
   const [deeper, setDeeper] = useState<{ query: string; anchorTitle?: string } | null>(null);
   const [pubMsg, setPubMsg] = useState<{ ok: boolean; text: string; url?: string } | null>(null);
+  const [hideDiagrams, setHideDiagrams] = useHideDiagrams(id);
   const f = findLesson(id);
 
   if (f?.lesson.written) {
@@ -179,6 +181,7 @@ function LessonStudy({ id }: { id: string }) {
         {l.issues && <button className="btn btn-sm" onClick={() => setPanel('issues')}>{issuesOpen.length ? `${issuesOpen.length} issue${issuesOpen.length > 1 ? 's' : ''} found` : 'Check: no open issues'}</button>}
         <button className="btn btn-sm" onClick={() => setPanel('versions')} disabled={!l.versions.length}>Versions{l.versions.length ? ` · ${l.versions.length}` : ''}</button>
         <button className="btn btn-sm" onClick={() => setDeeper({ query: l.title, anchorTitle: `${l.number} ${l.title}` })}>Go deeper</button>
+        {l.blocks.some((b) => b.type === 'diagram' || (b.type === 'figure' && b.figure === 'diagram')) && <button className="btn btn-sm" aria-pressed={hideDiagrams} onClick={() => setHideDiagrams(!hideDiagrams)}>{hideDiagrams ? 'Show diagrams' : 'Hide diagrams'}</button>}
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
         <label className="flex min-h-[44px] items-center gap-2.5 text-[14.5px]"><input type="checkbox" className="h-5 w-5 accent-[var(--accent-deep)]" checked={!!l.reviewed} onChange={(e) => db().lessons.update(id, { reviewed: e.target.checked })} /> I have reviewed this lesson</label>
@@ -217,7 +220,7 @@ function LessonStudy({ id }: { id: string }) {
               </section>
             </>
           ) : (
-            <LessonView doc={l} next={next} wrap={wrap} after={after} tag={tag} actions={actions}>
+            <LessonView doc={l} next={next} wrap={wrap} after={after} tag={tag} actions={actions} hideDiagrams={hideDiagrams}>
               {running && run?.partial && <div className="mt-6 rounded-xl border border-dashed border-line px-4 py-3" aria-hidden><p className="typing">{previewOf(run.partial)}</p></div>}
             </LessonView>
           )}

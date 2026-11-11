@@ -3,6 +3,7 @@ import golden from '@/content/golden/1-6.json';
 import { UNITS, allLessons, findLesson, unitBySlug } from '@/lib/curriculum';
 import { db, type AiLesson } from './db';
 import { LESSON_FACTS } from './lessonFacts';
+import { getFigureMode, promptFor } from './figureMode';
 import { SCHEMA_DOC, type LessonDoc, type StoredBlock } from './schema';
 
 const strip = (b: StoredBlock) => { const { _id, _step, _ai, _flags, ...rest } = b as StoredBlock & Record<string, unknown>; void _id; void _step; void _ai; void _flags; return rest; };
@@ -74,6 +75,7 @@ export async function positionOf(l: Pick<AiLesson, 'id' | 'unit' | 'number' | 't
 /** The context pack attached to every lesson-writing call. */
 export async function contextPack(l: Pick<AiLesson, 'id' | 'unit' | 'number' | 'title' | 'buildsOn' | 'meta' | 'dek'>, opts: { golden?: boolean } = { golden: true }) {
   const pos = await positionOf(l as AiLesson);
+  const mode = await getFigureMode();
   const facts = (await Promise.all(pos.buildsOn.slice(0, 3).map(factsFor))).join('\n');
   return [
     `CURRICULUM POSITION`,
@@ -87,7 +89,7 @@ export async function contextPack(l: Pick<AiLesson, 'id' | 'unit' | 'number' | '
     `Other lessons in this unit (do not duplicate): ${pos.existing.join(' | ')}`,
     ``,
     `BLOCK SCHEMA`,
-    SCHEMA_DOC,
-    opts.golden !== false && `\nGOLDEN EXAMPLE (lesson 1.6, trimmed; match this voice and density)\n${goldenExample()}`,
+    promptFor(SCHEMA_DOC, mode),
+    opts.golden !== false && `\nGOLDEN EXAMPLE (lesson 1.6, trimmed; match this voice and density)\n${mode === 'text' ? goldenExample().split('\n').filter((x) => !/"type":"(figure|tryThis|describe)"/.test(x)).join('\n') : goldenExample()}`,
   ].filter(Boolean).join('\n');
 }

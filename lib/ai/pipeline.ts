@@ -7,6 +7,7 @@ import { LineSplitter, checkLine } from './ndjson';
 import { PROMPT_VERSION, fill, getLearner, getPrompts } from './prompts';
 import { runTask, type Msg } from './providers';
 import { contextPack } from './context';
+import { getFigureMode, promptFor } from './figureMode';
 import { checkNumeric } from './mathsafe';
 import type { Task } from './db';
 
@@ -127,6 +128,7 @@ export async function runStep(id: string, step: string, h: Hooks = {}) {
   if (!l0) throw new Error('Lesson not found');
   h.onStep?.(step, stepLabel(l0, step));
   const prompts = await getPrompts();
+  const fmode = await getFigureMode();
   const ctx = await contextPack(l0);
   const sys = await systemMsg();
   // a redo replaces this step's earlier output
@@ -144,7 +146,7 @@ export async function runStep(id: string, step: string, h: Hooks = {}) {
 
   try {
     if (step === 'outline') {
-      const r = await streamLines('lessonWriting', [sys, { role: 'user', content: fill(prompts.outline, { context: ctx }) }], OutlineLineSchema, h, async (v) => {
+      const r = await streamLines('lessonWriting', [sys, { role: 'user', content: promptFor(fill(prompts.outline, { context: ctx }), fmode) }], OutlineLineSchema, h, async (v) => {
         await mutate(id, (l) => {
           if (v.type === 'meta') { const m = MetaLineSchema.parse(v); l.dek = m.dek; l.netWeight = m.netWeight; l.minutes = m.minutes; l.buildsOn = m.buildsOn.filter((x) => !!findLesson(x) && x !== id); }
           else if (v.type === 'plan') { const p = PlanLineSchema.parse(v); l.plan = [...(l.plan ?? []), { title: p.title, goal: p.goal, figure: p.figure }]; }
@@ -162,7 +164,7 @@ export async function runStep(id: string, step: string, h: Hooks = {}) {
       if (!plan) throw new Error('No plan for this section; regenerate the outline.');
       const done = (l0.plan ?? []).slice(0, i).map((p, k) => `${k + 1}. ${p.title}`).join('; ') || 'none yet';
       let first = true;
-      const r = await streamLines('lessonWriting', [sys, { role: 'user', content: fill(prompts.section, { n: i + 1, title: plan.title, goal: plan.goal, figure: plan.figure ?? 'none', done, context: ctx }) }], BlockSchema, h, async (v) => {
+      const r = await streamLines('lessonWriting', [sys, { role: 'user', content: promptFor(fill(prompts.section, { n: i + 1, title: plan.title, goal: plan.goal, figure: fmode === 'text' ? 'none' : plan.figure ?? 'none', done, context: ctx }), fmode) }], BlockSchema, h, async (v) => {
         await mutate(id, (l) => {
           if (first && v.type !== 'section') l.blocks.push({ type: 'section', title: plan.title, _id: uid('b'), _step: step, _ai: model });
           first = false;

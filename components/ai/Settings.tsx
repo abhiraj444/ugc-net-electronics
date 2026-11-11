@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { FIGURE_MODES, setFigureMode, useFigureMode } from '@/lib/ai/figureMode';
 import { db, exportAll, importAll, kvGet, kvSet, TASK_LABEL, TASKS, uid, type Profile, type Provider, type Task } from '@/lib/ai/db';
 import { PARAM_FIELDS, PRESETS, errorText, listModels, parseJsonField, streamChat } from '@/lib/ai/providers';
 import { disableEncryption, enableEncryption, lock, revealSecret, sealSecret } from '@/lib/ai/crypto';
@@ -281,8 +282,20 @@ function LearnerPrefs() {
       <div className="mt-5 space-y-4">
         <div><div className="flabel">Level</div><div className="flex flex-wrap gap-2">{(['beginner', 'intermediate', 'exam-ready'] as const).map((v) => <button key={v} className="btn btn-sm" aria-pressed={l.level === v} onClick={() => set({ level: v })}>{v[0].toUpperCase() + v.slice(1)}</button>)}</div></div>
         <div><div className="flabel">Language</div><div className="flex flex-wrap gap-2">{(['English', 'Hinglish'] as const).map((v) => <button key={v} className="btn btn-sm" aria-pressed={l.language === v} onClick={() => set({ language: v })}>{v}</button>)}</div></div>
+        <FigurePrefs />
       </div>
     </section>
+  );
+}
+
+function FigurePrefs() {
+  const mode = useFigureMode();
+  return (
+    <div aria-label="Figures and diagrams">
+      <div className="flabel">Figures &amp; diagrams</div>
+      <div className="flex flex-wrap gap-2">{FIGURE_MODES.map((m) => <button key={m.id} className="btn btn-sm" aria-pressed={mode === m.id} onClick={() => setFigureMode(m.id)}>{m.label}</button>)}</div>
+      <p className="mt-2 text-[13.5px] text-muted">{FIGURE_MODES.find((m) => m.id === mode)?.note} Applies to reading and to new generations.</p>
+    </div>
   );
 }
 

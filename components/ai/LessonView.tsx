@@ -8,8 +8,8 @@ import BlockRenderer, { type NextInfo, type Wrap } from './BlockRenderer';
 
 
 /** Lesson header + blocks, laid out exactly like the hand-written lesson pages. */
-export default function LessonView({ doc, next, wrap, after, tag, actions, children, publishedIds = [] }: {
-  doc: LessonDoc; next?: NextInfo; wrap?: Wrap; after?: (n: number, title: string) => ReactNode; tag?: ReactNode; actions?: ReactNode; children?: ReactNode; publishedIds?: string[];
+export default function LessonView({ doc, next, wrap, after, tag, actions, children, publishedIds = [], hideDiagrams }: {
+  doc: LessonDoc; next?: NextInfo; wrap?: Wrap; after?: (n: number, title: string) => ReactNode; tag?: ReactNode; actions?: ReactNode; children?: ReactNode; publishedIds?: string[]; hideDiagrams?: boolean;
 }) {
   const unit = unitBySlug(doc.unit);
   const hasFigure = doc.blocks.some((b) => b.type === 'figure');
@@ -40,7 +40,7 @@ export default function LessonView({ doc, next, wrap, after, tag, actions, child
         )}
         {actions}
       </header>
-      <BlockRenderer blocks={doc.blocks} lessonId={doc.id} next={next} wrap={wrap} after={after} />
+      <BlockRenderer blocks={doc.blocks} lessonId={doc.id} next={next} wrap={wrap} after={after} hideDiagrams={hideDiagrams} />
       {children}
     </>
   );
