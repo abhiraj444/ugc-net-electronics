@@ -2,7 +2,7 @@
 import { kvGet, kvSet } from './db';
 
 /** Versioned prompt templates. Settings -> Advanced can override any of them; Reset restores these. */
-export const PROMPT_VERSION = 'v1.1';
+export const PROMPT_VERSION = 'v1.2';
 
 export const DEFAULT_PROMPTS: Record<string, { label: string; text: string }> = {
   system: {
@@ -124,7 +124,7 @@ Lesson text (trimmed):
 export async function getPrompts(): Promise<Record<string, string>> {
   const over = await kvGet<Record<string, string>>('prompts', {});
   const out: Record<string, string> = {};
-  for (const [k, v] of Object.entries(DEFAULT_PROMPTS)) out[k] = over[k] ?? v.text;
+  for (const [k, v] of Object.entries({ ...DEFAULT_PROMPTS, ...DEFAULT_MD_PROMPTS })) out[k] = over[k] ?? v.text;
   return out;
 }
 export async function setPrompt(key: string, text: string | null) {
@@ -139,3 +139,84 @@ export function fill(t: string, vars: Record<string, string | number>) {
 
 export type Learner = { level: 'beginner' | 'intermediate' | 'exam-ready'; language: 'English' | 'Hinglish' };
 export const getLearner = () => kvGet<Learner>('learner', { level: 'beginner', language: 'English' });
+
+/* ---------------- Markdown output format (default) ---------------- */
+
+export type OutputFormat = 'md' | 'jsonl';
+export const OUTPUT_FORMATS: { id: OutputFormat; label: string; note: string }[] = [
+  { id: 'md', label: 'Markdown (recommended)', note: 'Models write natural Markdown with small YAML blocks; fewer broken blocks, diagrams stay intact.' },
+  { id: 'jsonl', label: 'JSON lines (legacy)', note: 'One JSON object per line. Kept for models that follow it well.' },
+];
+export const getOutputFormat = () => kvGet<OutputFormat>('outputFormat', 'md');
+export const setOutputFormat = (f: OutputFormat) => kvSet('outputFormat', f);
+
+/**
+ * Markdown block reference. Lines starting "@@diagram " are dropped unless figure mode is "all";
+ * lines starting "@@figure " are dropped in "text" mode (see promptForMd in figureMode.ts).
+ */
+export const MD_SCHEMA_DOC = `Write plain Markdown. Prose uses **bold**, *italic*, "- " lists, a blank line between paragraphs, KaTeX inline $...$ and display $$...$$. No HTML, no \\begin{align}.
+## Section title                    starts a section (question or verb phrase)
+A paragraph                         2-4 short sentences; a blank line ends it
+:::hook ... :::                     everyday scene, second person, no equations
+:::example Title ... :::            real-world instance (Indian context welcome); the title goes on the opening line
+:::sidenote ... :::                 corrects a common misconception
+:::guess                            a prediction, placed before the figure that answers it:
+question text, then a line with only ---, then the reveal, then :::
+@@figure :::tryThis ... :::                 one instruction right before a figure
+@@figure :::describe ... :::                after every figure or diagram: what it shows, controls, where numbers come from, limits
+:::remember ... :::                 one sentence
+:::doneWhen ... :::                 an observable test
+:::upNext ... :::                   two sentences
+Every ::: container is closed by a line with only :::. Never nest containers.
+Structured blocks are fenced code blocks with a YAML body. In YAML, wrap any string containing maths, a colon, a backslash or starting with * in single quotes ('...'); inside single quotes a backslash is literal, so write \\frac, not \\\\frac.
+\`\`\`equation   title, tex, symbols (list of {s, name, unit}), typical
+\`\`\`quiz       a YAML list of questions: stem, options (4), answer (0-3), why (4, one reason per option)
+\`\`\`net        questions (same as quiz, plus tag: Numerical and numeric: {formula, inputs, answer, unit} for numericals), traps (list), formula (TeX), formulaLabel
+@@figure \`\`\`figure     id (from the catalogue), title, label, params
+@@figure \`\`\`plot       title, label, x {name, min, max, label}, y {label, min, max}, curves (list of {expr, label}), sliders (list of {name, label, min, max, step, value, unit}), readouts (list of {label, expr, unit}); mathjs expressions (exp, log = ln, log10, sqrt, ^); only the x name and slider names are in scope
+@@diagram \`\`\`mermaid Title   a Mermaid flowchart when no catalogue figure fits: "flowchart TD" or "flowchart LR", short labels (2-4 words, brackets inside quotes like A["Holes (majority)"]), at most 12 nodes, no style/classDef/linkStyle lines
+@@figure Figure catalogue: pn-junction params {NA, ND, T} (abrupt junction builder) · diode-iv (n, Is, T) · doping · effective-mass · energy-bands · fermi-filling · thermal-lattice · plot (use the plot fence).
+@@diagram For anything else draw a mermaid diagram, not a figure.`;
+
+export const DEFAULT_MD_PROMPTS: Record<string, { label: string; text: string }> = {
+  sectionMd: {
+    label: 'Step 2 · One section (Markdown)',
+    text: `TASK: section
+Write section {{n}} of the lesson: "{{title}}". Goal: {{goal}}.
+@@figure Planned figure: {{figure}}.
+Output Markdown only, no preamble and no wrapping code fence. The first line must be: ## {{title}}
+Then 3-8 blocks: paragraphs (2-4 short sentences each), and where useful one of: a :::guess (before the figure that answers it), an equation fence, a :::example, a :::sidenote.
+@@figure For a figure: :::tryThis, then the figure or plot fence, then :::describe (always in that order).
+@@diagram For a flowchart: the mermaid fence, then :::describe.
+Do not write the quiz, remember, NET corner or done-when here.
+Already written sections: {{done}}
+
+{{context}}`,
+  },
+  quizNetMd: {
+    label: 'Step 3 · Quiz and NET corner (Markdown)',
+    text: `TASK: quiz
+Write the closing blocks of this lesson. Output Markdown only, exactly these 5 blocks in order, nothing else:
+:::remember  one sentence, the thing to know a year from now
+\`\`\`quiz  4 MCQs, 4 options each, one correct, distractors are real misconceptions, a one-line why for EVERY option
+\`\`\`net  3 exam-style questions in UGC NET Paper 2 style, at least one tagged Numerical with a numeric object whose formula, inputs and answer are consistent (the app recomputes it); 3-4 traps; one formula to memorise and its formulaLabel
+:::doneWhen  an observable test the learner can do
+:::upNext  two sentences teasing the next lesson: {{next}}
+
+Lesson so far (for consistency):
+{{lesson}}
+
+{{context}}`,
+  },
+  repairMd: {
+    label: 'Repair one block (Markdown)',
+    text: `TASK: repair
+This Markdown block from section "{{section}}" failed: {{error}}
+Block:
+{{block}}
+Return ONLY the corrected block in the same Markdown format (a ::: container or a fenced YAML/mermaid block), nothing else.
+
+Format:
+{{schema}}`,
+  },
+};

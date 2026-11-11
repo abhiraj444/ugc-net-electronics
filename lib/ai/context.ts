@@ -3,16 +3,28 @@ import golden from '@/content/golden/1-6.json';
 import { UNITS, allLessons, findLesson, unitBySlug } from '@/lib/curriculum';
 import { db, type AiLesson } from './db';
 import { LESSON_FACTS } from './lessonFacts';
-import { getFigureMode, promptFor } from './figureMode';
+import { getFigureMode, promptFor, promptForMd, type FigureMode } from './figureMode';
+import { MD_SCHEMA_DOC, type OutputFormat } from './prompts';
+import { blocksToMd } from './lessonMd';
 import { SCHEMA_DOC, type LessonDoc, type StoredBlock } from './schema';
 
 const strip = (b: StoredBlock) => { const { _id, _step, _ai, _flags, ...rest } = b as StoredBlock & Record<string, unknown>; void _id; void _step; void _ai; void _flags; return rest; };
 
 /** The golden 1.6 lesson cut down to one example of each block type, as NDJSON. */
 export function goldenExample(): string {
+  return goldenBlocks().map((o) => JSON.stringify(o)).join('\n');
+}
+
+/** The same trimmed golden lesson in the Markdown format; figures dropped in text mode. */
+export function goldenMd(mode: FigureMode): string {
+  const bs = goldenBlocks().filter((b) => mode !== 'text' || !['figure', 'tryThis', 'describe', 'diagram'].includes(b.type as string));
+  return blocksToMd(bs);
+}
+
+function goldenBlocks(): Record<string, unknown>[] {
   const blocks = (golden as unknown as LessonDoc).blocks;
   const seen = new Set<string>();
-  const lines: string[] = [];
+  const lines: Record<string, unknown>[] = [];
   for (const b of blocks) {
     if (seen.has(b.type) && b.type !== 'section') continue;
     if (b.type === 'section' && seen.has('section') && lines.length > 8) continue;
@@ -21,9 +33,9 @@ export function goldenExample(): string {
     if (b.type === 'describe') o = { ...o, text: (b.text as string).split('\n\n').slice(0, 2).join('\n\n') };
     if (b.type === 'quiz') o = { ...o, questions: (b.questions as unknown[]).slice(0, 1) };
     if (b.type === 'netCorner') o = { ...o, questions: (b.questions as unknown[]).slice(0, 1), traps: (b.traps as string[]).slice(0, 2) };
-    lines.push(JSON.stringify(o));
+    lines.push(o);
   }
-  return lines.join('\n');
+  return lines;
 }
 
 async function factsFor(id: string): Promise<string> {
@@ -73,7 +85,7 @@ export async function positionOf(l: Pick<AiLesson, 'id' | 'unit' | 'number' | 't
 }
 
 /** The context pack attached to every lesson-writing call. */
-export async function contextPack(l: Pick<AiLesson, 'id' | 'unit' | 'number' | 'title' | 'buildsOn' | 'meta' | 'dek'>, opts: { golden?: boolean } = { golden: true }) {
+export async function contextPack(l: Pick<AiLesson, 'id' | 'unit' | 'number' | 'title' | 'buildsOn' | 'meta' | 'dek'>, opts: { golden?: boolean; format?: OutputFormat } = { golden: true }) {
   const pos = await positionOf(l as AiLesson);
   const mode = await getFigureMode();
   const facts = (await Promise.all(pos.buildsOn.slice(0, 3).map(factsFor))).join('\n');
@@ -88,8 +100,12 @@ export async function contextPack(l: Pick<AiLesson, 'id' | 'unit' | 'number' | '
     facts && `It builds on (do not re-teach, refer back):\n${facts}`,
     `Other lessons in this unit (do not duplicate): ${pos.existing.join(' | ')}`,
     ``,
-    `BLOCK SCHEMA`,
+    ...(opts.format === 'md' ? [
+      `MARKDOWN FORMAT`,
+      promptForMd(MD_SCHEMA_DOC, mode),
+      opts.golden !== false && `\nGOLDEN EXAMPLE (lesson 1.6, trimmed; match this voice, density and format)\n${goldenMd(mode)}`,
+    ] : [`BLOCK SCHEMA`,
     promptFor(SCHEMA_DOC, mode),
-    opts.golden !== false && `\nGOLDEN EXAMPLE (lesson 1.6, trimmed; match this voice and density)\n${mode === 'text' ? goldenExample().split('\n').filter((x) => !/"type":"(figure|tryThis|describe)"/.test(x)).join('\n') : goldenExample()}`,
+    opts.golden !== false && `\nGOLDEN EXAMPLE (lesson 1.6, trimmed; match this voice and density)\n${mode === 'text' ? goldenExample().split('\n').filter((x) => !/"type":"(figure|tryThis|describe)"/.test(x)).join('\n') : goldenExample()}`]),
   ].filter(Boolean).join('\n');
 }

@@ -46,3 +46,16 @@ export function promptFor(text: string, mode: FigureMode) {
   }
   return t;
 }
+
+/** Markdown prompts tag figure lines "@@figure " and Mermaid lines "@@diagram "; keep or drop them by mode. */
+export function mdTagsFor(text: string, mode: FigureMode) {
+  const keep = (tag: string) => tag === 'diagram' ? mode === 'all' : mode !== 'text';
+  return text.split('\n').filter((l) => { const m = /^@@(figure|diagram) /.exec(l); return !m || keep(m[1]); }).map((l) => l.replace(/^@@(figure|diagram) /, '')).join('\n');
+}
+/** mdTagsFor plus a one-line reminder of the mode (used once per prompt, in the context pack). */
+export function promptForMd(text: string, mode: FigureMode) {
+  let t = mdTagsFor(text, mode);
+  if (mode === 'interactive') t += '\nINTERACTIVE ONLY: do not write mermaid fences.';
+  if (mode === 'text') t += '\nTEXT ONLY: do not write figure, plot or mermaid fences, :::tryThis or :::describe.';
+  return t;
+}

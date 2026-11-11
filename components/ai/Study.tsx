@@ -225,7 +225,7 @@ function LessonStudy({ id }: { id: string }) {
             </>
           ) : (
             <LessonView doc={l} next={next} wrap={wrap} after={after} tag={tag} actions={actions} hideDiagrams={hideDiagrams}>
-              {running && run?.partial && <div className="mt-6 rounded-xl border border-dashed border-line px-4 py-3" aria-hidden><p className="typing">{previewOf(run.partial)}</p></div>}
+              {running && run?.partial && <div className="mt-6 rounded-xl border border-dashed border-line px-4 py-3" aria-hidden><p className="typing whitespace-pre-line">{run.partial.trimStart().startsWith('{') ? previewOf(run.partial) : run.partial}</p></div>}
             </LessonView>
           )}
           {err && <div className="mt-6"><ErrorNote msg={err.msg} hint={err.hint}><div className="mt-2 flex flex-wrap gap-2"><button className="btn btn-sm" onClick={generate}>{started ? 'Resume' : 'Try again'}</button><button className="btn btn-sm" onClick={() => setErr(null)}>Dismiss</button></div></ErrorNote></div>}

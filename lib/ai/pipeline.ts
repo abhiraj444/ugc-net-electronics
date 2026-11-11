@@ -3,11 +3,14 @@ import type { ZodType } from 'zod';
 import { findLesson, unitBySlug, allLessons } from '@/lib/curriculum';
 import { db, uid, type AiLesson, type Issue, type PracticeSet, type StepState } from './db';
 import { BlockSchema, CheckLineSchema, MetaLineSchema, OutlineLineSchema, PlanLineSchema, PracticeLineSchema, SCHEMA_DOC, type Block, type StoredBlock } from './schema';
-import { LineSplitter, checkLine } from './ndjson';
-import { PROMPT_VERSION, fill, getLearner, getPrompts } from './prompts';
+import { LineSplitter, checkLine, mathProblem } from './ndjson';
+import { MD_SCHEMA_DOC, PROMPT_VERSION, fill, getLearner, getOutputFormat, getPrompts, type OutputFormat } from './prompts';
+import { MdBlockStream, blocksToMd, mdUnitToBlock, parseMd, previewOfMd, type MdUnit } from './lessonMd';
+import { sanitizeMermaid } from './mermaid';
+import { zodMessage } from './schema';
 import { runTask, type Msg } from './providers';
 import { contextPack } from './context';
-import { getFigureMode, promptFor } from './figureMode';
+import { getFigureMode, mdTagsFor, promptFor } from './figureMode';
 import { checkNumeric } from './mathsafe';
 import type { Task } from './db';
 
@@ -114,6 +117,78 @@ export async function streamLines<T>(task: Task, messages: Msg[], schema: ZodTyp
   return r;
 }
 
+/* ---------------- Markdown streaming ---------------- */
+
+/** Mermaid's own parser, in the browser only; a node/SSR context skips the check. */
+async function mermaidProblem(code: string): Promise<string | null> {
+  if (typeof window === 'undefined') return null;
+  try {
+    const mermaid = (await import('mermaid')).default;
+    await mermaid.parse(sanitizeMermaid(code));
+    return null;
+  } catch (e) {
+    return `Mermaid: ${String((e as Error)?.message ?? e).split('\n').slice(0, 2).join(' ').slice(0, 200)}`;
+  }
+}
+
+/** Markdown unit -> validated block (same checks as a JSON line: zod, KaTeX, plus Mermaid parse). */
+export async function checkMdUnit(u: MdUnit): Promise<{ ok: true; value: Block } | { ok: false; error: string }> {
+  const c = mdUnitToBlock(u);
+  if (!c.ok) return c;
+  const r = BlockSchema.safeParse(c.block);
+  if (!r.success) return { ok: false, error: `Schema (${String(c.block.type)}): ${zodMessage(r.error)}` };
+  const m = mathProblem(r.data);
+  if (m) return { ok: false, error: `KaTeX: ${m}` };
+  if (r.data.type === 'diagram') { const e = await mermaidProblem(r.data.code); if (e) return { ok: false, error: e }; }
+  return { ok: true, value: r.data };
+}
+
+/** One repair call for a broken Markdown block: the whole block text plus its section title. */
+async function repairMdUnit(task: Task, u: MdUnit, error: string, section: string, h: Hooks, lessonId?: string): Promise<{ ok: true; value: Block[] } | { ok: false; error: string }> {
+  h.onRepair?.(`Repairing a block: ${error.slice(0, 120)}`);
+  const p = await getPrompts();
+  try {
+    const r = await runTask(task, [await systemMsg(), { role: 'user', content: fill(p.repairMd, { error, block: u.text, section: section || '(lesson opening)', schema: mdTagsFor(MD_SCHEMA_DOC, 'all') }) }], { signal: h.signal, lessonId, step: 'repair', promptVersion: PROMPT_VERSION, params: { temperature: 0 } });
+    const units = parseMd(r.text);
+    if (!units.length) return { ok: false, error: 'Repair returned nothing' };
+    const out: Block[] = [];
+    for (const x of units) { const c = await checkMdUnit(x); if (!c.ok) return { ok: false, error: `${error} (repair failed: ${c.error})` }; out.push(c.value); }
+    return { ok: true, value: out };
+  } catch (e) {
+    if ((e as Error).name === 'AbortError') throw e;
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+/** Stream a Markdown answer; each finished top-level block is validated (repaired once) and handed to onBlock immediately. */
+export async function streamMd(task: Task, messages: Msg[], h: Hooks, onBlock: (v: Block) => Promise<void> | void, onRaw: (text: string, error: string) => Promise<void> | void, meta: { lessonId?: string; step?: string; section?: string } = {}) {
+  const ms = new MdBlockStream();
+  let section = meta.section ?? '';
+  let chain = Promise.resolve();
+  const handle = async (u: MdUnit) => {
+    if (u.kind === 'section') section = u.text.replace(/^##\s+/, '');
+    const c = await checkMdUnit(u);
+    if (c.ok) return void (await onBlock(c.value));
+    const r = await repairMdUnit(task, u, c.error, section, h, meta.lessonId);
+    if (r.ok) { for (const b of r.value) await onBlock(b); }
+    else await onRaw(u.text, r.error);
+  };
+  const enqueue = (us: MdUnit[]) => { for (const u of us) chain = chain.then(() => handle(u)); };
+  const r = await runTask(task, messages, {
+    signal: h.signal, lessonId: meta.lessonId, step: meta.step, promptVersion: PROMPT_VERSION,
+    onDelta: (chunk) => { enqueue(ms.push(chunk)); h.onPartial?.(previewOfMd(ms.partial)); },
+  });
+  enqueue(ms.flush());
+  h.onPartial?.('');
+  await chain;
+  return r;
+}
+
+/** Stream lesson blocks in the chosen output format. */
+function streamBlocks(fmt: OutputFormat, task: Task, messages: Msg[], h: Hooks, onBlock: (v: Block) => Promise<void> | void, onRaw: (text: string, error: string) => Promise<void> | void, meta: { lessonId?: string; step?: string; section?: string }) {
+  return fmt === 'md' ? streamMd(task, messages, h, onBlock, onRaw, meta) : streamLines(task, messages, BlockSchema, h, onBlock, onRaw, meta);
+}
+
 /* ---------------- the lesson pipeline ---------------- */
 
 const asStored = (b: Block, step: string, model?: string): StoredBlock => ({ ...b, _id: uid('b'), _step: step, _ai: model });
@@ -129,7 +204,8 @@ export async function runStep(id: string, step: string, h: Hooks = {}) {
   h.onStep?.(step, stepLabel(l0, step));
   const prompts = await getPrompts();
   const fmode = await getFigureMode();
-  const ctx = await contextPack(l0);
+  const fmt = await getOutputFormat();
+  const ctx = await contextPack(l0, { golden: true, format: step === 'outline' || step === 'check' ? 'jsonl' : fmt });
   const sys = await systemMsg();
   // a redo replaces this step's earlier output
   if (l0.blocks.some((b) => b._step === step)) await snapshot(id, `Before regenerating ${stepLabel(l0, step)}`);
@@ -164,7 +240,9 @@ export async function runStep(id: string, step: string, h: Hooks = {}) {
       if (!plan) throw new Error('No plan for this section; regenerate the outline.');
       const done = (l0.plan ?? []).slice(0, i).map((p, k) => `${k + 1}. ${p.title}`).join('; ') || 'none yet';
       let first = true;
-      const r = await streamLines('lessonWriting', [sys, { role: 'user', content: promptFor(fill(prompts.section, { n: i + 1, title: plan.title, goal: plan.goal, figure: fmode === 'text' ? 'none' : plan.figure ?? 'none', done, context: ctx }), fmode) }], BlockSchema, h, async (v) => {
+      const vars = { n: i + 1, title: plan.title, goal: plan.goal, figure: fmode === 'text' ? 'none' : plan.figure ?? 'none', done, context: ctx };
+      const content = fmt === 'md' ? mdTagsFor(fill(prompts.sectionMd, vars), fmode) : promptFor(fill(prompts.section, vars), fmode);
+      const r = await streamBlocks(fmt, 'lessonWriting', [sys, { role: 'user', content }], h, async (v) => {
         await mutate(id, (l) => {
           if (first && v.type !== 'section') l.blocks.push({ type: 'section', title: plan.title, _id: uid('b'), _step: step, _ai: model });
           first = false;
@@ -173,13 +251,15 @@ export async function runStep(id: string, step: string, h: Hooks = {}) {
           l.blocks.push(asStored(v, step, model));
           sortBlocks(l);
         });
-      }, raw, { lessonId: id, step });
+      }, raw, { lessonId: id, step, section: plan.title });
       model = r.model;
     } else if (step === 'quiz') {
       const f = findLesson(id);
       const next = f?.next ? `${f.next.number} "${f.next.title}"` : 'the next topic in this unit';
-      const lessonText = l0.blocks.filter((b) => b.type !== 'raw').map((b) => JSON.stringify(stripMeta(b))).join('\n').slice(0, 14000);
-      const r = await streamLines('quiz', [sys, { role: 'user', content: fill(prompts.quizNet, { next, lesson: lessonText, context: ctx }) }], BlockSchema, h, async (v) => {
+      const kept = l0.blocks.filter((b) => b.type !== 'raw');
+      const lessonText = (fmt === 'md' ? blocksToMd(kept.map(stripMeta) as Record<string, unknown>[]) : kept.map((b) => JSON.stringify(stripMeta(b))).join('\n')).slice(0, 14000);
+      const content = fmt === 'md' ? mdTagsFor(fill(prompts.quizNetMd, { next, lesson: lessonText, context: ctx }), fmode) : fill(prompts.quizNet, { next, lesson: lessonText, context: ctx });
+      const r = await streamBlocks(fmt, 'quiz', [sys, { role: 'user', content }], h, async (v) => {
         if (!['remember', 'quiz', 'netCorner', 'doneWhen', 'upNext'].includes(v.type)) return;
         await mutate(id, (l) => {
           if (l.blocks.some((b) => b._step === 'quiz' && b.type === v.type)) return;
@@ -188,7 +268,7 @@ export async function runStep(id: string, step: string, h: Hooks = {}) {
           l.blocks.push(b);
           sortBlocks(l);
         });
-      }, raw, { lessonId: id, step });
+      }, raw, { lessonId: id, step, section: 'Quiz and NET corner' });
       model = r.model;
     } else if (step === 'check') {
       const lessonText = l0.blocks.map((b, i) => `[${i}] ${JSON.stringify(stripMeta(b))}`).join('\n').slice(0, 20000);

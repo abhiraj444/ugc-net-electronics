@@ -6,7 +6,7 @@ import { FIGURE_MODES, setFigureMode, useFigureMode } from '@/lib/ai/figureMode'
 import { db, exportAll, importAll, kvGet, kvSet, TASK_LABEL, TASKS, uid, type Profile, type Provider, type Task } from '@/lib/ai/db';
 import { PARAM_FIELDS, PRESETS, errorText, listModels, parseJsonField, streamChat } from '@/lib/ai/providers';
 import { disableEncryption, enableEncryption, lock, revealSecret, sealSecret } from '@/lib/ai/crypto';
-import { DEFAULT_PROMPTS, getPrompts, setPrompt, getLearner, type Learner } from '@/lib/ai/prompts';
+import { DEFAULT_PROMPTS, DEFAULT_MD_PROMPTS, OUTPUT_FORMATS, getPrompts, setPrompt, getLearner, setOutputFormat, type Learner, type OutputFormat } from '@/lib/ai/prompts';
 import { getGitHub, setGitHub, testGitHub, GH_DEFAULT } from '@/lib/ai/github';
 import { ErrorNote, Field, SecretInput, SectionHead, UnlockBar, download, pickJsonFile, useLock } from './ui';
 
@@ -284,6 +284,7 @@ function LearnerPrefs() {
         <div><div className="flabel">Level</div><div className="flex flex-wrap gap-2">{(['beginner', 'intermediate', 'exam-ready'] as const).map((v) => <button key={v} className="btn btn-sm" aria-pressed={l.level === v} onClick={() => set({ level: v })}>{v[0].toUpperCase() + v.slice(1)}</button>)}</div></div>
         <div><div className="flabel">Language</div><div className="flex flex-wrap gap-2">{(['English', 'Hinglish'] as const).map((v) => <button key={v} className="btn btn-sm" aria-pressed={l.language === v} onClick={() => set({ language: v })}>{v}</button>)}</div></div>
         <FigurePrefs />
+        <FormatPrefs />
       </div>
     </section>
   );
@@ -296,6 +297,17 @@ function FigurePrefs() {
       <div className="flabel">Figures &amp; diagrams</div>
       <div className="flex flex-wrap gap-2">{FIGURE_MODES.map((m) => <button key={m.id} className="btn btn-sm" aria-pressed={mode === m.id} onClick={() => setFigureMode(m.id)}>{m.label}</button>)}</div>
       <p className="mt-2 text-[13.5px] text-muted">{FIGURE_MODES.find((m) => m.id === mode)?.note} Applies to reading and to new generations.</p>
+    </div>
+  );
+}
+
+function FormatPrefs() {
+  const fmt = (useLiveQuery(() => db().kv.get('outputFormat'), [])?.value as OutputFormat | undefined) ?? 'md';
+  return (
+    <div aria-label="Output format">
+      <div className="flabel">Output format</div>
+      <div className="flex flex-wrap gap-2">{OUTPUT_FORMATS.map((m) => <button key={m.id} className="btn btn-sm" aria-pressed={fmt === m.id} onClick={() => setOutputFormat(m.id)}>{m.label}</button>)}</div>
+      <p className="mt-2 text-[13.5px] text-muted">{OUTPUT_FORMATS.find((m) => m.id === fmt)?.note} Used for sections and the quiz; the outline stays JSON.</p>
     </div>
   );
 }
@@ -456,7 +468,7 @@ function Advanced() {
     <section aria-label="Advanced">
       <SectionHead n={8} title="Advanced: prompt templates">The exact instructions sent to the model. Words in double braces are filled in by the app. Reset to default is always there.</SectionHead>
       <div className="mt-5 space-y-3">
-        {Object.entries(DEFAULT_PROMPTS).map(([k, d]) => {
+        {Object.entries({ ...DEFAULT_PROMPTS, ...DEFAULT_MD_PROMPTS }).map(([k, d]) => {
           const changed = ps[k] !== d.text;
           return (
             <details key={k} className="describe group rounded-2xl border border-line bg-card">
