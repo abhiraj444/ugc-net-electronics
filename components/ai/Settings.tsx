@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { importLessonJson } from '@/lib/ai/migrate';
 import { FIGURE_MODES, setFigureMode, useFigureMode } from '@/lib/ai/figureMode';
 import { db, exportAll, importAll, kvGet, kvSet, TASK_LABEL, TASKS, uid, type Profile, type Provider, type Task } from '@/lib/ai/db';
 import { PARAM_FIELDS, PRESETS, errorText, listModels, parseJsonField, streamChat } from '@/lib/ai/providers';
@@ -359,6 +360,7 @@ function GitHubSection() {
 /* ---------------- Backup ---------------- */
 
 function Backup() {
+  const [imported, setImported] = useState('');
   const [withKeys, setWithKeys] = useState(false);
   const [msg, setMsg] = useState('');
   const exportSettings = async () => {
@@ -396,6 +398,10 @@ function Backup() {
         <div className="flex flex-wrap gap-2">
           <button className="btn" onClick={async () => download(`bm-backup-${new Date().toISOString().slice(0, 10)}.json`, await exportAll())}>Export everything</button>
           <button className="btn" onClick={async () => { try { await importAll(await pickJsonFile()); setMsg('Backup restored.'); } catch (e) { setMsg((e as Error).message); } }}>Import everything</button>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button className="btn" onClick={async () => { try { const r = await importLessonJson(await pickJsonFile()); setMsg(`Imported lesson ${r.id}. ${r.summary}`); setImported(r.id); } catch (e) { setMsg((e as Error).message); } }}>Import lesson JSON</button>
+          {imported && <a className="text-[14px] underline underline-offset-4" href={`/study/?id=${imported}`}>Open it</a>}
         </div>
         {msg && <p className="text-[14px] text-muted" role="status">{msg}</p>}
       </div>

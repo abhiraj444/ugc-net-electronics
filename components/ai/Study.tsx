@@ -11,6 +11,7 @@ import { errorText, resolveTask } from '@/lib/ai/providers';
 import { getLearner, type Learner } from '@/lib/ai/prompts';
 import { publishLesson } from '@/lib/ai/github';
 import { useHideDiagrams } from '@/lib/ai/figureMode';
+import { repairStoredLesson } from '@/lib/ai/migrate';
 import { previewOf } from '@/lib/ai/ndjson';
 import type { StoredBlock } from '@/lib/ai/schema';
 import { ReadingProgress, Quiz } from '@/components/lesson/Interactive';
@@ -110,7 +111,7 @@ function blockLabel(b: StoredBlock) {
 
 function LessonStudy({ id }: { id: string }) {
   const [missing, setMissing] = useState(false);
-  useEffect(() => { ensureLesson(id).then((l) => { if (!l) db().lessons.get(id).then((x) => setMissing(!x)); }); }, [id]);
+  useEffect(() => { ensureLesson(id).then((l) => { if (!l) db().lessons.get(id).then((x) => setMissing(!x)); else repairStoredLesson(id); }); }, [id]);
   const l = useLiveQuery(() => db().lessons.get(id), [id]);
   const { run, err, start, stop, setErr } = useRunner();
   const [review, setReview] = useState(false);
@@ -118,6 +119,7 @@ function LessonStudy({ id }: { id: string }) {
   const [panel, setPanel] = useState<'' | 'versions' | 'issues'>('');
   const [deeper, setDeeper] = useState<{ query: string; anchorTitle?: string } | null>(null);
   const [pubMsg, setPubMsg] = useState<{ ok: boolean; text: string; url?: string } | null>(null);
+  const [repairMsg, setRepairMsg] = useState('');
   const [hideDiagrams, setHideDiagrams] = useHideDiagrams(id);
   const f = findLesson(id);
 
@@ -187,7 +189,9 @@ function LessonStudy({ id }: { id: string }) {
         <label className="flex min-h-[44px] items-center gap-2.5 text-[14.5px]"><input type="checkbox" className="h-5 w-5 accent-[var(--accent-deep)]" checked={!!l.reviewed} onChange={(e) => db().lessons.update(id, { reviewed: e.target.checked })} /> I have reviewed this lesson</label>
         <button className="btn btn-sm btn-primary" disabled={!l.reviewed || unfinished} onClick={async () => { setPubMsg(null); try { const url = await publishLesson(id); setPubMsg({ ok: true, text: 'Published to the course repo. It becomes a normal page after the next deploy.', url }); } catch (e) { setPubMsg({ ok: false, text: (e as Error).message }); } }}>{l.meta?.publishedAt ? 'Publish update' : 'Publish to course'}</button>
         <button className="btn btn-sm" onClick={() => download(`lesson-${id}.json`, l)}>Export JSON</button>
+        <button className="btn btn-sm" onClick={async () => setRepairMsg(await repairStoredLesson(id))}>Repair lesson</button>
       </div>
+      {repairMsg && <p className="mt-2 text-[13.5px] text-muted" role="status">{repairMsg}</p>}
       {!l.reviewed && <p className="mt-1 text-[13px] text-muted">Publishing needs a finished lesson that you have read and ticked as reviewed.</p>}
       {pubMsg && <div className={`mt-3 ${pubMsg.ok ? 'note-good' : 'note-bad'}`} role="status">{pubMsg.text}{pubMsg.url && <> <a className="underline" href={pubMsg.url} target="_blank" rel="noreferrer">See the commit</a></>}</div>}
     </div>
