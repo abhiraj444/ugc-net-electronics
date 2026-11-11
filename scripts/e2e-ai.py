@@ -86,6 +86,10 @@ async def main():
         await d.locator('select').first.select_option(label='Google Gemini')
         await page.wait_for_timeout(300)
         await shot(page, 'ai-settings-390')
+        # the legacy NDJSON flow below runs with Output format = JSON lines; Markdown is tested in section 9
+        await page.get_by_role('button', name='JSON lines (legacy)').click()
+        await page.wait_for_timeout(300)
+        ok('output format setting: JSON lines selectable (default Markdown)', await page.get_by_role('button', name='JSON lines (legacy)').get_attribute('aria-pressed') == 'true')
 
         # ---------- 3. generate a Coming soon lesson, interrupt, resume ----------
         await page.goto(BASE + '/course/unit-1/', wait_until='networkidle')
@@ -265,6 +269,50 @@ async def main():
         ok('practice set generated (labelled Practice, never PYQ)', 'Practice ·' in body and 'PYQ' not in body)
         await page.get_by_role('radio').first.click()
         await shot(page, 'ai-practice-390')
+
+        # ---------- 9. Markdown output format ----------
+        await page.goto(BASE + '/settings/', wait_until='networkidle')
+        await page.get_by_role('button', name='Markdown (recommended)').click()
+        await page.wait_for_timeout(300)
+        rep0 = stats().get('repair', 0); sec0 = stats().get('section', 0)
+        await page.goto(BASE + '/study/?id=1-9', wait_until='networkidle')
+        await page.get_by_role('button', name='Generate this lesson').click()
+        previews, shot_taken = [], False
+        t0 = time.time()
+        while time.time() - t0 < 110:
+            if await page.locator('.typing').count():
+                try: previews.append(await page.locator('.typing').first.inner_text(timeout=500))
+                except Exception: pass
+                if not shot_taken and stats().get('section', 0) > sec0 and await page.locator('article h2').count():
+                    await page.evaluate("document.querySelectorAll('.reveal').forEach(e=>e.classList.add('in'))")
+                    await page.locator('.typing').first.evaluate("e => e.scrollIntoView({block: 'center'})")
+                    await page.wait_for_timeout(200)
+                    await page.screenshot(path=os.path.join(OUT, 'fix-md-streaming.png')); shot_taken = True
+            body = await page.inner_text('body')
+            if 'issues found' in body or 'issue found' in body or 'no open issues' in body: break
+            await page.wait_for_timeout(250)
+        bad = [x for x in previews if '``' in x or ':::' in x]
+        ok('md: live preview shown while streaming, never raw ``` or ::: markup', previews and not bad, f'{len(previews)} samples, bad: {bad[:2]!r}')
+        ok('md: streaming screenshot taken', shot_taken)
+        body = await page.inner_text('body')
+        await page.wait_for_selector('[data-diagram=ok]', timeout=15000)
+        ok('md: mermaid fence -> diagram block drawn', await page.locator('[data-diagram=ok]').count() == 1 and 'How breakdown starts' in body)
+        ok('md: :::guess, :::example, :::sidenote rendered', 'heavily doped' in body and 'Voltage reference in a 230 V adapter' in body and 'Zener voltage' in body)
+        ok('md: plot fence -> interactive plot', await page.locator('svg[aria-label^="Reverse current near breakdown"]').count() == 1)
+        ok('md: equation fence (LaTeX in YAML) renders', await page.locator('figure.card .katex').count() >= 1 and 'Avalanche multiplication' in body)
+        ok('md: broken YAML quiz fence repaired in one call', 'Which mechanism dominates in a 3 V Zener diode?' in body and 'Quiz · check yourself' in body)
+        ok('md: NET corner from YAML', 'NET corner' in body and 'Zener current' in body)
+        ok('md: unrepairable mermaid -> plain text (Unparsed block)', 'Unparsed block' in body and 'Mermaid' in body)
+        s9 = stats()
+        ok('md: exactly one repair call per broken block (2)', s9.get('repair', 0) - rep0 == 2, s9)
+        types = await page.evaluate("""() => new Promise(r => { const q = indexedDB.open('bm-ai'); q.onsuccess = () => { const t = q.result.transaction('lessons').objectStore('lessons').get('1-9'); t.onsuccess = () => r(t.result ? t.result.blocks.map(b => b.type) : []); }; })""")
+        ok('md: stored as the same block JSON', types.count('diagram') == 1 and types.count('raw') == 1 and types.count('section') == 3 and 'quiz' in types and 'netCorner' in types and 'upNext' in types, types)
+        await page.get_by_role('button', name='Review and edit').click()
+        await page.wait_for_timeout(300)
+        rawbox = page.locator('div.ring-1', has_text='Unparsed block').first
+        ok('md: broken block offers Regenerate', await rawbox.get_by_role('button', name='Regenerate').count() == 1)
+        await page.get_by_role('button', name='Done reviewing').click()
+        await shot(page, 'fix-md-lesson-390')
 
         # dark mode render of the AI lesson
         await page.emulate_media(color_scheme='dark')

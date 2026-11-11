@@ -1,7 +1,7 @@
 """Mock LLM server for end-to-end tests of the AI layer. No real model, no keys.
 Speaks OpenAI-compatible SSE (/v1/chat/completions, /v1/models) and Gemini SSE
 (/v1beta/models/<m>:streamGenerateContent?alt=sse, /v1beta/models). Emits NDJSON lesson blocks
-slowly, including deliberately broken lines to exercise repair and the unparsed fallback.
+(or Markdown when the prompt asks for it: a mermaid fence, a broken YAML quiz fence, a broken mermaid) slowly, including deliberately broken lines to exercise repair and the unparsed fallback.
 Usage: python3 scripts/mock-llm.py [port]   (GET /stats shows how many calls each task got; POST /reset clears)
 """
 import json, re, sys, time, threading
@@ -115,11 +115,156 @@ def remix(prompt):
         L({"type": "paragraph", "text": "Think of it like rounding prices when you shop: you get close enough, fast."}),
     ])
 
+
+# ---------- Markdown format (Settings -> Output format: Markdown) ----------
+GOOD_MERMAID = """```mermaid How breakdown starts
+flowchart LR
+  A["Reverse bias grows"] --> B{"Doping level?"}
+  B -->|light| C["Avalanche"]
+  B -->|heavy| D["Zener tunnelling"]
+```"""
+BROKEN_MERMAID = """```mermaid
+flowchart TD
+  A["Field ] --> B[[[(
+  B ==>|| }}}
+```"""
+
+def section_md(n):
+    if n == 1:
+        return "\n".join([
+            "## Why does a reverse-biased wall give way?",
+            "",
+            "Push a diode in reverse and almost nothing flows. Push harder and, at one sharp voltage, current **shoots up**. The wall has not melted: carriers found a way through.",
+            "",
+            ":::guess",
+            "Which diode breaks down at a lower voltage: a lightly doped one or a heavily doped one?",
+            "---",
+            "The **heavily doped** one: its depletion region is thin, so the field $E = V/W$ is huge even at a few volts.",
+            ":::",
+            "",
+            GOOD_MERMAID,
+            "",
+            ":::describe",
+            "**What it shows.** The doping level decides which mechanism wins. **Limits.** Around 5-6 V both happen together.",
+            ":::",
+            "",
+            BROKEN_MERMAID,
+            "",
+        ])
+    if n == 2:
+        return "\n".join([
+            "## Try it: watch the knee move",
+            "",
+            "The plot draws the reverse current as the voltage approaches breakdown.",
+            "",
+            ":::tryThis",
+            "drag **$V_{BR}$** and watch the knee move.",
+            ":::",
+            "",
+            "```plot",
+            "title: Reverse current near breakdown",
+            "label: Figure 1.9",
+            "x: {name: V, min: 0, max: 20, label: Reverse voltage (V)}",
+            "y: {label: 'I (mA)', min: 0, max: 50}",
+            "curves:",
+            "  - {expr: '1/(1-(V/Vbr)^4)*0.01', label: Avalanche multiplication}",
+            "sliders:",
+            "  - {name: Vbr, label: Breakdown voltage, min: 21, max: 40, step: 1, value: 25, unit: V}",
+            "```",
+            "",
+            ":::describe",
+            "**What it shows.** Current multiplied by $M = 1/(1-(V/V_{BR})^n)$ with $n = 4$. **Limits.** Real curves depend on the junction.",
+            ":::",
+            "",
+            "```equation",
+            "title: Avalanche multiplication",
+            "tex: \"M = \\frac{1}{1-(V/V_{BR})^n}\"",
+            "symbols:",
+            "  - {s: 'V_{BR}', name: breakdown voltage, unit: V}",
+            "  - {s: n, name: empirical exponent}",
+            "typical: '$n$ between 3 and 6 for silicon.'",
+            "```",
+            "",
+        ])
+    return "\n".join([
+        "## Which one does the exam mean by Zener?",
+        "",
+        "Below about 5 V it is real **Zener tunnelling**; above about 6 V it is avalanche, even when the part is sold as a Zener diode.",
+        "",
+        ":::example Voltage reference in a 230 V adapter",
+        "A 5.1 V Zener in a cheap phone charger sits right at the crossover, which is why its temperature drift is tiny.",
+        ":::",
+        "",
+        ":::sidenote",
+        "Zener voltage *falls* with temperature; avalanche voltage *rises*.",
+        ":::",
+    ])
+
+BROKEN_QUIZ = """```quiz
+- stem: Which mechanism dominates in a 3 V Zener: tunnelling or avalanche?
+  options: [Avalanche, Tunnelling, Both equally, Neither
+  answer: B
+```"""
+GOOD_QUIZ = """```quiz
+- stem: 'Which mechanism dominates in a 3 V Zener diode?'
+  options: [Avalanche, Tunnelling, Both equally, Neither]
+  answer: B
+  why: ['Avalanche needs a wide region and high voltage.', 'Right: a thin, heavily doped junction lets electrons tunnel.', 'That happens near 5-6 V.', 'It does break down.']
+- stem: 'Avalanche breakdown voltage with rising temperature:'
+  options: [Falls, Rises, Stays fixed, Becomes zero]
+  answer: 1
+  why: ['That is Zener.', 'Right: more lattice scattering, so carriers need more field.', 'No.', 'No.']
+```"""
+
+def quiz_md():
+    return "\n".join([
+        ":::remember",
+        "Thin, heavily doped junctions break down by tunnelling at low voltage; wide, lightly doped ones by avalanche at high voltage.",
+        ":::",
+        "",
+        BROKEN_QUIZ,
+        "",
+        "```net",
+        "questions:",
+        "  - tag: Numerical",
+        "    stem: 'A Zener of 6.2 V with a 1 kΩ series resistor across 12 V. The Zener current is closest to:'",
+        "    options: ['5.8 mA', '12 mA', '6.2 mA', '0.58 mA']",
+        "    answer: 0",
+        "    why: ['(12 − 6.2)/1000 = 5.8 mA.', 'Forgets the Zener drop.', 'Confuses volts and mA.', 'Off by ten.']",
+        "    numeric: {formula: '(Vs - Vz)/R*1e3', inputs: {Vs: 12, Vz: 6.2, R: 1000}, answer: 5.8, unit: mA}",
+        "traps:",
+        "  - 'A **Zener diode** above 6 V breaks down by avalanche.'",
+        "  - 'Temperature coefficients have opposite signs.'",
+        "formula: 'I_Z = \\frac{V_S - V_Z}{R}'",
+        "formulaLabel: Zener current",
+        "```",
+        "",
+        ":::doneWhen",
+        "You can say which mechanism a given breakdown voltage implies and why.",
+        ":::",
+        "",
+        ":::upNext",
+        "Next, put the breakdown to work. A Zener can hold a voltage steady.",
+        ":::",
+    ])
+
+def repair_md(prompt):
+    m = re.search(r"Block:\n(.*?)\nReturn ONLY", prompt, re.S)
+    prompt = m.group(1) if m else prompt
+    if "```quiz" in prompt: return GOOD_QUIZ
+    if "```mermaid" in prompt: return BROKEN_MERMAID  # still broken: must fall back to plain text
+    return "A repaired paragraph."
+
 def respond(prompt, system):
     m = re.search(r"TASK: (\w+)", prompt)
     task = m.group(1) if m else ("doubt" if "patient tutor" in system else "chat")
     with LOCK: STATS[task] = STATS.get(task, 0) + 1
     if task == "outline": return task, outline()
+    md = "Output Markdown only" in prompt or "This Markdown block" in prompt
+    if task == "section" and md:
+        n = int(re.search(r"Write section (\d+)", prompt).group(1)); return task, section_md(n)
+    if task == "quiz" and md: return task, quiz_md()
+    if task == "repair" and md: return task, repair_md(prompt)
     if task == "section":
         n = int(re.search(r"Write section (\d+)", prompt).group(1)); return task, section(n)
     if task == "quiz": return task, quiz()

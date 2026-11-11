@@ -1,7 +1,7 @@
 // Unit tests for lib/ai/lessonMd.ts. Run: node --experimental-strip-types scripts/test-lessonMd.mts
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { MdBlockStream, mdUnitToBlock, parseMd, blocksToMd, previewOfMd, type MdUnit } from '../lib/ai/lessonMd.ts';
+import { MdBlockStream, mdUnitToBlock, parseMd, blocksToMd, previewOfMd, intendedType, type MdUnit } from '../lib/ai/lessonMd.ts';
 
 let pass = 0, fail = 0;
 function t(name: string, fn: () => void) {
@@ -120,6 +120,10 @@ t('paragraph emitted at the blank line, tail is live preview', () => {
   assert.equal(previewOfMd(s.partial), 'Second');
 });
 
+t('preview never shows ::: or ``` markup, even mid-marker', () => {
+  for (let n = 1; n < SAMPLE.length; n++) { const s = new MdBlockStream(); s.push(SAMPLE.slice(0, n)); const p = previewOfMd(s.partial); assert.ok(!/:::|``|^:|^`|\n[:`]/.test(p), `at ${n}: ${JSON.stringify(p.slice(-40))}`); }
+});
+
 t('```markdown wrapper is ignored', () => {
   const bs = conv(parseMd('```markdown\n## T\n\nHello.\n```\n'));
   assert.deepEqual(bs.map((b) => b.type), ['section', 'paragraph']);
@@ -154,6 +158,10 @@ t('golden 1.6 round-trips: blocks -> Markdown -> blocks', () => {
   const a = flat(blocks), b = flat(back);
   assert.equal(b.length, a.length, `count ${b.length} vs ${a.length}`);
   a.forEach((x, i) => assert.equal(norm(b[i]), norm(x), `block ${i} (${x.type})`));
+});
+
+t('intendedType reads the opening line even when the body is broken', () => {
+  assert.deepEqual(parseMd('```mermaid\nflowchart TD\n A[\n```\n\n:::guess\nq\n:::\n\n```plot\nx: [\n```\n').map(intendedType), ['diagram', 'yourGuess', 'figure']);
 });
 
 console.log(`\n${pass}/${pass + fail} passed`);

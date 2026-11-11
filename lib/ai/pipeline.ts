@@ -5,7 +5,7 @@ import { db, uid, type AiLesson, type Issue, type PracticeSet, type StepState } 
 import { BlockSchema, CheckLineSchema, MetaLineSchema, OutlineLineSchema, PlanLineSchema, PracticeLineSchema, SCHEMA_DOC, type Block, type StoredBlock } from './schema';
 import { LineSplitter, checkLine, mathProblem } from './ndjson';
 import { MD_SCHEMA_DOC, PROMPT_VERSION, fill, getLearner, getOutputFormat, getPrompts, type OutputFormat } from './prompts';
-import { MdBlockStream, blocksToMd, mdUnitToBlock, parseMd, previewOfMd, type MdUnit } from './lessonMd';
+import { MdBlockStream, blocksToMd, intendedType, mdUnitToBlock, parseMd, previewOfMd, type MdUnit } from './lessonMd';
 import { sanitizeMermaid } from './mermaid';
 import { zodMessage } from './schema';
 import { runTask, type Msg } from './providers';
@@ -153,6 +153,8 @@ async function repairMdUnit(task: Task, u: MdUnit, error: string, section: strin
     if (!units.length) return { ok: false, error: 'Repair returned nothing' };
     const out: Block[] = [];
     for (const x of units) { const c = await checkMdUnit(x); if (!c.ok) return { ok: false, error: `${error} (repair failed: ${c.error})` }; out.push(c.value); }
+    const want = intendedType(u);
+    if (want && !out.some((b) => b.type === want)) return { ok: false, error: `${error} (repair returned ${out.map((b) => b.type).join(', ')}, not ${want})` };
     return { ok: true, value: out };
   } catch (e) {
     if ((e as Error).name === 'AbortError') throw e;

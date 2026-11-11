@@ -213,6 +213,17 @@ export function mdUnitToBlock(u: MdUnit): Converted {
   }
 }
 
+const FENCE_TYPE: Record<string, string> = { mermaid: 'diagram', equation: 'equationCard', quiz: 'quiz', net: 'netCorner', figure: 'figure', plot: 'figure' };
+/** The block type a unit was meant to be, read from its opening line (null when it cannot be told). */
+export function intendedType(u: MdUnit): string | null {
+  const first = u.text.split('\n')[0].trim();
+  if (u.kind === 'section') return 'section';
+  if (u.kind === 'paragraph') return 'paragraph';
+  if (u.kind === 'container') { const m = CONTAINER_OPEN.exec(first); return m ? CONTAINERS[m[1].toLowerCase()] ?? null : null; }
+  const f = FENCE.exec(first);
+  return f ? FENCE_TYPE[f[3].toLowerCase()] ?? null : null;
+}
+
 /** Parse a whole Markdown answer at once (used for repair replies and tests). */
 export function parseMd(text: string) {
   const s = new MdBlockStream();
@@ -263,6 +274,7 @@ export function previewOfMd(partial: string) {
   if (!s) return '';
   const f = FENCE.exec(s.split('\n')[0]);
   if (f) return FENCE_LABEL[f[3].toLowerCase()] ?? 'Writing…';
-  const t = s.replace(/^:::\s*[A-Za-z][\w-]*[^\n]*\n?/, '').replace(/^#+\s+/, '').replace(/\n-{3,}\n/, '\n\n');
+  const lines = s.split('\n').filter((l, i, a) => !/^\s*(:{2,}|`{2,}|~{3,})/.test(l) && !(i === a.length - 1 && /^\s*[:`~]+\s*$/.test(l)));
+  const t = lines.join('\n').replace(/^#+\s+/, '').replace(/(^|\n)-{3,}(\n|$)/g, '\n\n').replace(/\*\*|__/g, '').trim();
   return t.length > 600 ? '…' + t.slice(-600) : t;
 }
