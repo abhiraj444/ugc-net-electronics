@@ -3,11 +3,13 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { allLessons, lessonHref, unitBySlug } from '@/lib/curriculum';
 import { useProgress } from '@/lib/progress';
+import { statusLabel, useLessonStatuses } from '@/lib/ai/useLessonStatus';
 import { IconBack, IconCheck, IconClose, IconArrow, IconList } from '../Icons';
 
 function LessonList({ unitSlug, current, onPick }: { unitSlug: string; current: string; onPick?: () => void }) {
   const unit = unitBySlug(unitSlug)!;
   const prog = useProgress();
+  const ai = useLessonStatuses(unitSlug);
   return (
     <div className="space-y-6">
       {unit.parts.map((part) => (
@@ -31,7 +33,7 @@ function LessonList({ unitSlug, current, onPick }: { unitSlug: string; current: 
                   {l.written ? (
                     <Link href={lessonHref(unit, l)} onClick={onPick} aria-current={on ? 'page' : undefined} className={`flex min-h-[44px] items-start gap-2 rounded-xl px-2 py-2.5 ${on ? 'bg-[var(--accent-tint)] font-semibold' : 'hover:bg-[var(--accent-tint)]'}`}>{inner}</Link>
                   ) : (
-                    <Link href={`/study/?id=${l.id}`} onClick={onPick} aria-current={on ? 'page' : undefined} className={`flex min-h-[44px] items-start gap-2 rounded-xl px-2 py-2.5 ${on ? 'bg-[var(--accent-tint)] font-semibold' : 'text-muted hover:bg-[var(--accent-tint)]'}`}>{inner}<span className="mt-0.5 shrink-0 text-[10.5px] text-muted">Generate</span></Link>
+                    <Link href={`/study/?id=${l.id}`} onClick={onPick} aria-current={on ? 'page' : undefined} className={`flex min-h-[44px] items-start gap-2 rounded-xl px-2 py-2.5 ${on ? 'bg-[var(--accent-tint)] font-semibold' : 'text-muted hover:bg-[var(--accent-tint)]'}`}>{inner}<span className={`mt-0.5 shrink-0 text-right text-[10.5px] leading-tight ${ai?.[l.id] ? 'font-medium text-[var(--accent-deep)]' : 'text-muted'}`} data-ai-status={ai?.[l.id]?.status ?? 'none'}>{statusLabel(ai?.[l.id]).replace(' with AI', '').replace(' · ', ' ·\u00a0')}</span></Link>
                   )}
                 </li>
               );

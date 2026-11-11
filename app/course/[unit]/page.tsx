@@ -6,6 +6,7 @@ import { Milestone } from '@/components/course/Milestone';
 import { LessonDoneMark, UnitBar, UnitDoneCount } from '@/components/course/UnitProgress';
 import { IconArrow, IconBack } from '@/components/Icons';
 import { AddTopicButton, CustomTopics } from '@/components/ai/Launchers';
+import { AiStatusLine } from '@/components/ai/LessonStatus';
 
 export const dynamicParams = false;
 export function generateStaticParams() { return UNITS.map((u) => ({ unit: u.slug })); }
@@ -66,7 +67,7 @@ export default async function UnitPage({ params }: Params) {
                   <span className="w-10 shrink-0 pt-0.5 font-mono text-[12px] text-muted">{l.number}</span>
                   <span className="min-w-0 flex-1">
                     <span className={`block text-[16px] leading-snug ${ok ? 'font-medium' : ''}`}>{l.title}</span>
-                    <span className="mt-1 block text-[12.5px] text-muted">{ok ? `About ${l.minutes ?? 15} min · ${l.published ? 'AI-written, reviewed · ' : 'Interactive figure · '}Quiz · NET corner` : l.project ? 'Project · Coming soon · Generate with AI' : 'Coming soon · Generate with AI'}</span>
+                    {ok ? <span className="mt-1 block text-[12.5px] text-muted">{`About ${l.minutes ?? 15} min · ${l.published ? 'AI-written, reviewed · ' : 'Interactive figure · '}Quiz · NET corner`}</span> : <AiStatusLine id={l.id} unit={u.slug} project={!!l.project} />}
                   </span>
                   <IconArrow size={17} className="mt-1 shrink-0 text-muted" />
                 </>
