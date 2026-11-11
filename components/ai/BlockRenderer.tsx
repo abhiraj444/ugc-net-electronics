@@ -5,6 +5,7 @@ import { Describe, EquationCard, Example, FigureFrame, Hook, MathBlock, Remember
 import { DoneWhen, Quiz, YourGuess } from '@/components/lesson/Interactive';
 import type { FigureBlock, NetQuestion, StoredBlock } from '@/lib/ai/schema';
 import { Md, mdInline } from './Markdown';
+import { looksLikeMermaid } from '@/lib/ai/mermaid';
 
 const Loading = () => <div className="figure my-3 grid h-[260px] place-items-center font-ui text-[14px] text-muted">Loading figure…</div>;
 const FIGS: Record<string, React.ComponentType<Record<string, number>>> = {
@@ -17,9 +18,11 @@ const FIGS: Record<string, React.ComponentType<Record<string, number>>> = {
   'thermal-lattice': dynamic(() => import('@/components/figures/ThermalLattice'), { loading: Loading }) as never,
 };
 const PlotFigure = dynamic(() => import('./PlotFigure'), { loading: Loading });
+const Diagram = dynamic(() => import('./Diagram'), { ssr: false });
 
 export function Figure({ b }: { b: FigureBlock }) {
   if (b.figure === 'plot' && b.plot) return <div className="reveal"><PlotFigure spec={b.plot} title={b.title} label={b.label} /></div>;
+  if (b.figure === 'diagram' && b.diagram && looksLikeMermaid(b.diagram)) return <Diagram code={b.diagram} title={b.title} />;
   if (b.figure === 'diagram' || !FIGS[b.figure]) {
     return (
       <div className="reveal"><FigureFrame label={b.label ?? 'Figure'} title={b.title ?? 'Diagram'}>
@@ -76,6 +79,7 @@ function one(b: StoredBlock, lessonId: string, next?: NextInfo): ReactNode {
     case 'yourGuess': return <YourGuess question={<>{mdInline(b.question)}</>} answer={<>{mdInline(b.answer)}</>} />;
     case 'tryThis': return <TryThis>{mdInline(b.text)}</TryThis>;
     case 'figure': return <Figure b={b} />;
+    case 'diagram': return <Diagram code={b.code} title={b.title} label={b.label} />;
     case 'describe': return <Describe><Md text={b.text} /></Describe>;
     case 'remember': return <Remember>{mdInline(b.text)}</Remember>;
     case 'quiz': return <section className="mt-14" aria-label="Quiz"><Quiz id={`lesson-${lessonId}`} questions={b.questions} fmt={(s) => mdInline(s)} title="Quiz · check yourself" intro="Tap an answer. You get the reason straight away." /></section>;

@@ -2,7 +2,7 @@
 import { kvGet, kvSet } from './db';
 
 /** Versioned prompt templates. Settings -> Advanced can override any of them; Reset restores these. */
-export const PROMPT_VERSION = 'v1.0';
+export const PROMPT_VERSION = 'v1.1';
 
 export const DEFAULT_PROMPTS: Record<string, { label: string; text: string }> = {
   system: {
@@ -27,7 +27,7 @@ Learner level: {{level}}. Language: {{language}}.`,
 Plan the lesson below. Output NDJSON only (one JSON object per line, no code fences, no prose):
 line 1: {"type":"meta","dek":"2-3 sentences: what it is, why it matters, how it connects","netWeight":"High|Medium|Low","minutes":12-25,"buildsOn":["lesson ids from the list below"]}
 line 2: {"type":"hook","text":"1-2 paragraphs, an everyday scene in second person, no equations"}
-then 4 or 5 lines: {"type":"plan","title":"section title (question or verb)","goal":"what this section teaches, one sentence","figure":"figure id from the catalogue, or none"}
+then 4 or 5 lines: {"type":"plan","title":"section title (question or verb)","goal":"what this section teaches, one sentence","figure":"figure id from the catalogue, \"diagram\" for a Mermaid flowchart, or none"}
 Exactly one section should be the interactive "Try it" section with a figure.
 
 {{context}}`,
@@ -36,8 +36,8 @@ Exactly one section should be the interactive "Try it" section with a figure.
     label: 'Step 2 · One section',
     text: `TASK: section
 Write section {{n}} of the lesson: "{{title}}". Goal: {{goal}}. Planned figure: {{figure}}.
-Output NDJSON only, one block per line, no code fences. The FIRST line must be {"type":"section","title":"{{title}}"}.
-Then 3-8 blocks: paragraphs (2-4 short sentences each), and where useful one of: yourGuess (before the figure that answers it), tryThis + figure + describe (always in that order), equationCard, example, sideNote.
+Output NDJSON only, one block per line, no code fences. A Mermaid diagram goes in ONE "diagram" block whose "code" is a single JSON string with \\n escapes; never put Mermaid lines on their own lines. The FIRST line must be {"type":"section","title":"{{title}}"}.
+Then 3-8 blocks: paragraphs (2-4 short sentences each), and where useful one of: yourGuess (before the figure that answers it), tryThis + figure (or diagram) + describe (always in that order), equationCard, example, sideNote.
 Do not write the quiz, remember, NET corner or done-when here.
 Already written sections: {{done}}
 

@@ -34,7 +34,7 @@ export function cleanLine(l: string) {
 }
 
 const TEX_KEYS = new Set(['tex', 'formula', 's']);
-const SKIP_KEYS = new Set(['plot', 'params', 'numeric', 'inputs', 'type', 'figure', '_id', '_step', '_ai', '_flags']);
+const SKIP_KEYS = new Set(['plot', 'params', 'numeric', 'inputs', 'type', 'figure', 'code', '_id', '_step', '_ai', '_flags']);
 
 /** Test-render every maths string in a block with KaTeX. Returns the first error, or null. */
 export function mathProblem(v: unknown, key = ''): string | null {

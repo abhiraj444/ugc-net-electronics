@@ -72,6 +72,7 @@ export const BlockSchema = z.union([
   z.object({ type: z.literal('yourGuess'), question: md, answer: md }),
   z.object({ type: z.literal('tryThis'), text: md }),
   FigureSchema,
+  z.object({ type: z.literal('diagram'), code: z.string().min(1), title: z.string().optional(), label: z.string().optional() }), // Mermaid flowchart
   z.object({ type: z.literal('describe'), text: md }),
   z.object({ type: z.literal('remember'), text: md }),
   z.object({ type: z.literal('quiz'), questions: z.array(McqSchema).min(1).max(8) }),
@@ -156,12 +157,12 @@ export const SCHEMA_DOC = `Each line is ONE JSON object with a "type". Text fiel
 {"type":"tryThis","text":md}                    instruction right before a figure
 {"type":"figure","figure":id,"title":str,"label":str,"params":{...}}  id from the figure catalogue
 {"type":"figure","figure":"plot","title":str,"label":str,"plot":{"x":{"name":"V","min":0,"max":1,"label":"V (volts)"},"y":{"label":"I (mA)"},"curves":[{"expr":"Is*(exp(V/Vt)-1)*1e3","label":"I"}],"sliders":[{"name":"Vt","label":"Thermal voltage","min":0.02,"max":0.04,"step":0.001,"value":0.02585,"unit":"V"}],"readouts":[{"label":"I at 0.7 V","expr":"Is*(exp(0.7/Vt)-1)*1e3","unit":"mA"}]}}
-{"type":"figure","figure":"diagram","title":str,"label":str,"diagram":md}  labelled static description when nothing fits
-{"type":"describe","text":md}                   after every figure: what it shows, controls, where numbers come from, limits
+{"type":"diagram","title":str,"code":mermaid}   a Mermaid flowchart when no catalogue figure fits: "flowchart TD" or "flowchart LR" only, short labels (2-4 words, put any brackets inside quotes like A["Holes (majority)"]), at most 12 nodes, no style/classDef/linkStyle lines. The whole diagram is ONE JSON string on ONE line, newlines written as \n.
+{"type":"describe","text":md}                   after every figure or diagram: what it shows, controls, where numbers come from, limits
 {"type":"remember","text":str}                  one sentence
 {"type":"quiz","questions":[{"stem":str,"options":[4 str],"answer":0-3,"why":[4 str, one reason per option]}]}
 {"type":"netCorner","questions":[{...mcq, "tag":"Numerical", "numeric":{"formula":"kT*log(NA*ND/ni^2)","inputs":{"kT":0.02585,"NA":1e17,"ND":1e16,"ni":1e10},"answer":0.774,"unit":"V"}}],"traps":[md],"formula":tex,"formulaLabel":str}
 {"type":"doneWhen","text":md}                   an observable test
 {"type":"upNext","teaser":str}                  two sentences
 Plot expressions use mathjs syntax (exp, log = natural log, log10, sqrt, sin, cos, pi, ^). Only the x name and slider names are in scope.
-Figure catalogue: ${'pn-junction'} params {NA,ND,T} (abrupt junction builder with charge/field/potential/bands) · diode-iv (diode I-V with n, Is, T) · doping (donor/acceptor lattice) · effective-mass (E-k curvature) · energy-bands (levels splitting into bands) · fermi-filling (Fermi-Dirac filling) · thermal-lattice (bonds breaking with temperature) · plot (generic, see above) · diagram (text).`;
+Figure catalogue: ${'pn-junction'} params {NA,ND,T} (abrupt junction builder with charge/field/potential/bands) · diode-iv (diode I-V with n, Is, T) · doping (donor/acceptor lattice) · effective-mass (E-k curvature) · energy-bands (levels splitting into bands) · fermi-filling (Fermi-Dirac filling) · thermal-lattice (bonds breaking with temperature) · plot (generic, see above). For anything else use a "diagram" block (Mermaid), not a figure.`;

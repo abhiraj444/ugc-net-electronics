@@ -104,7 +104,7 @@ function Progress({ l, run, onStop }: { l: AiLesson; run: Run; onStop: () => voi
 }
 
 function blockLabel(b: StoredBlock) {
-  return ({ hook: 'Hook', section: 'Section title', paragraph: 'Paragraph', equationCard: 'Equation card', example: 'Example', sideNote: 'Side note', yourGuess: 'Your guess', tryThis: 'Try this', figure: 'Figure', describe: 'Figure description', remember: 'Remember', quiz: 'Quiz', netCorner: 'NET corner', doneWhen: 'Done when', upNext: 'Up next', raw: 'Unparsed block' } as Record<string, string>)[b.type] ?? b.type;
+  return ({ hook: 'Hook', section: 'Section title', paragraph: 'Paragraph', equationCard: 'Equation card', example: 'Example', sideNote: 'Side note', yourGuess: 'Your guess', tryThis: 'Try this', figure: 'Figure', diagram: 'Diagram', describe: 'Figure description', remember: 'Remember', quiz: 'Quiz', netCorner: 'NET corner', doneWhen: 'Done when', upNext: 'Up next', raw: 'Unparsed block' } as Record<string, string>)[b.type] ?? b.type;
 }
 
 function LessonStudy({ id }: { id: string }) {
