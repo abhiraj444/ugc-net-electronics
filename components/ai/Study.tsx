@@ -174,7 +174,7 @@ function LessonStudy({ id }: { id: string }) {
   const tag = l.meta?.model ? <span className="ai-tag" title="Written by AI on this device">AI-written · {l.meta.model}</span> : null;
   const issuesOpen = (l.issues ?? []).filter((x) => !x.applied && x.problem !== 'No issues found.');
 
-  const actions = l.status !== 'empty' && !running && (
+  const actions = (l.status !== 'empty' || started) && !running && (
     <div className="reveal mt-6 rounded-2xl border border-line bg-card p-4 font-ui">
       <div className="flex flex-wrap items-center gap-2">
         <button className="btn btn-sm" aria-pressed={review} onClick={() => setReview((r) => !r)}>{review ? 'Done reviewing' : 'Review and edit'}</button>
@@ -204,7 +204,7 @@ function LessonStudy({ id }: { id: string }) {
         {unit && <LessonSidebar unitSlug={unit.slug} current={id} />}
         <article className="min-w-0 max-w-[720px] flex-1 pb-16 pt-7 sm:pt-10">
           {running && <Progress l={l} run={run} onStop={stop} />}
-          {l.status === 'empty' && !running && !started ? (
+          {!running && l.blocks.length === 0 && !l.plan?.length ? (
             <>
               {header}
               <h1 className="claim reveal mt-3">{l.title}</h1>
@@ -217,10 +217,11 @@ function LessonStudy({ id }: { id: string }) {
                     <li key={i} className="flex gap-3"><span className="w-5 shrink-0 font-mono text-[13px] text-muted">{i + 1}</span><span>{t}</span></li>
                   ))}
                 </ol>
+                {started && <p className="mt-3 note-bad text-[14px]">The last attempt stopped before anything was saved. Check the provider in Settings, or pick another model, then try again.</p>}
                 <p className="mt-3 text-[14px] text-muted">Each step is saved the moment it finishes. If you lose the connection, come back and press Resume.</p>
                 <ModelLine />
                 <UnlockBar />
-                <button className="btn btn-primary mt-5 w-full sm:w-auto" onClick={generate}>Generate this lesson</button>
+                <button className="btn btn-primary mt-5 w-full sm:w-auto" onClick={generate}>{started ? 'Try again' : 'Generate this lesson'}</button>
               </section>
             </>
           ) : (
