@@ -24,18 +24,34 @@ const OPEN = '[({';
 const CLOSE: Record<string, string> = { '[': ']', '(': ')', '{': '}' };
 
 /** Quote every unquoted node label: H[Holes (majority)] -> H["Holes (majority)"], A(x) -> A("x"). */
+const ARROW = /(\s*(?:<-->|-->|---|==>|-\.->)(?:\|[^|]*\|)?\s*)/;
+const safeId = (id: string) => id.replace(/-/g, '_');
+
+/** "A -- text --> B" -> "A -->|text| B"; a bare multi-word node "Depletion Region" -> Depletion_Region["Depletion Region"]. */
+function normalizeEdges(line: string) {
+  const l = line.replace(/(^|[^-<])--\s+([^>|-][^>|]*?)\s+-->/g, '$1-->|$2|').replace(/==\s+([^>|=][^>|]*?)\s+==>/g, '==>|$1|').replace(/\s*(?:-->|---|==>|-\.->)(?:\|[^|]*\|)?\s*$/, '');
+  return l.split(ARROW).map((seg, k) => {
+    if (k % 2) return seg;
+    const t = seg.trim();
+    if (/^[A-Za-z][\w-]*(\s+[A-Za-z][\w-]*)+$/.test(t) && !/^(subgraph|direction|end)\b/.test(t)) return seg.replace(t, `${safeId(t.replace(/\s+/g, '_'))}["${t}"]`);
+    return seg;
+  }).join('');
+}
+
 function quoteLabels(line: string) {
+  line = normalizeEdges(line);
   let out = '';
   let i = 0;
   while (i < line.length) {
-    const m = /^[A-Za-z0-9_][\w-]*/.exec(line.slice(i));
+    if (line[i] === '|') { const e = line.indexOf('|', i + 1); const stop = e < 0 ? line.length : e + 1; out += line.slice(i, stop); i = stop; continue; }
+    const m = /^[A-Za-z0-9_]+(?:-[A-Za-z0-9_]+)*/.exec(line.slice(i));
     const prev = i > 0 ? line[i - 1] : ' ';
-    if (!m || /[\w"-]/.test(prev)) { out += line[i]; i++; continue; }
+    if (!m || /[\w"]/.test(prev)) { out += line[i]; i++; continue; }
     const id = m[0];
     let j = i + id.length;
     let opener = '';
     while (opener.length < 2 && j < line.length && OPEN.includes(line[j])) { opener += line[j]; j++; }
-    if (!opener) { out += id; i += id.length; continue; }
+    if (!opener) { out += id.includes('-') ? `${safeId(id)}["${id}"]` : id; i += id.length; continue; }
     const closer = opener.split('').reverse().map((c) => CLOSE[c]).join('');
     let depth = 0, k = j, end = -1, inQ = false;
     for (; k < line.length; k++) {
@@ -49,7 +65,7 @@ function quoteLabels(line: string) {
     if (end < 0) { out += line.slice(i); break; }
     const inner = line.slice(j, end).trim();
     const q = /^".*"$/.test(inner) ? inner : `"${inner.replace(/"/g, '#quot;')}"`;
-    out += `${id}${opener}${q}${closer}`;
+    out += `${safeId(id)}${opener}${q}${closer}`;
     i = end + closer.length;
   }
   // edge labels: -->|a (b)| -> -->|"a (b)"|
@@ -80,6 +96,8 @@ export function sanitizeMermaid(src: string) {
     out.push(quoteLabels(line));
   }
   while (depth-- > 0) out.push('end');
+  // drop empty subgraphs (a subgraph line straight followed by its end)
+  for (let k = out.length - 2; k >= 0; k--) if (/^\s*subgraph\b/.test(out[k]) && out[k + 1].trim() === 'end') out.splice(k, 2);
   const first = out.find((l) => l.trim());
   if (!first || !(HEADER.test(first) || OTHER_TYPES.test(first))) {
     // a leading "direction LR" becomes the header direction

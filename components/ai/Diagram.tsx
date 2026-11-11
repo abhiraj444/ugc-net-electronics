@@ -22,7 +22,7 @@ export default function Diagram({ code, title, label }: { code: string; title?: 
   const dark = useTheme();
   const rid = 'mmd' + useId().replace(/[^a-zA-Z0-9]/g, '');
   const [svg, setSvg] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<string | false>(false);
   const [src, setSrc] = useState(false);
   const clean = sanitizeMermaid(code);
 
@@ -35,9 +35,9 @@ export default function Diagram({ code, title, label }: { code: string; title?: 
       await mermaid.parse(clean);
       const { svg } = await mermaid.render(`${rid}${dark ? 'd' : 'l'}`, clean);
       if (live) setSvg(svg);
-    }).catch(() => {
+    }).catch((e) => {
       document.getElementById(`d${rid}${dark ? 'd' : 'l'}`)?.remove();
-      if (live) setFailed(true);
+      if (live) setFailed(String((e as Error)?.message ?? e).slice(0, 300));
     });
     queue = job;
     return () => { live = false; };
@@ -47,7 +47,7 @@ export default function Diagram({ code, title, label }: { code: string; title?: 
 
   if (failed) {
     return (
-      <details className="my-4 rounded-xl border border-dashed border-line px-3 py-2 font-ui text-[13px] text-muted" data-diagram="failed">
+      <details className="my-4 rounded-xl border border-dashed border-line px-3 py-2 font-ui text-[13px] text-muted" data-diagram="failed" data-error={failed}>
         <summary className="cursor-pointer select-none">Diagram couldn&apos;t be drawn · Show source</summary>
         {source}
       </details>
@@ -55,7 +55,7 @@ export default function Diagram({ code, title, label }: { code: string; title?: 
   }
   return (
     <div className="reveal" data-diagram={svg ? 'ok' : 'loading'}>
-      <FigureFrame label={label ?? 'Diagram'} title={title ?? 'Diagram'}>
+      <FigureFrame label={label ?? 'Diagram'} title={title ?? 'Flowchart'}>
         <div className="max-w-full overflow-x-auto border-t border-line px-3 py-4">
           {svg ? <div className="mx-auto w-max [&_svg]:h-auto [&_svg]:max-w-none" dangerouslySetInnerHTML={{ __html: svg }} />
             : <div className="grid h-[160px] place-items-center text-[14px] text-muted">Drawing diagram…</div>}
